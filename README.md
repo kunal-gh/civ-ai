@@ -21,6 +21,13 @@ CIV-AI is a year-by-year civilization simulator where every decision matters. Ea
 
 The goal: keep your civilization alive and thriving across 100 simulated years.
 
+### Live V2 Dashboard & Analytics
+![CIV-AI V2 Dashboard](docs/images/dashboard_v2.png)
+*The V2 Streamlit dashboard tracks 11 variables with dynamic Plague Inc-style delta indicators and Boss Scenario alerts.*
+
+![CIV-AI Dynamic Analytics](docs/images/analytics_chart.png)
+*Custom Matplotlib dual-axis tracking of Population vs normalized Disease, Climate, and Legitimacy indexes.*
+
 ---
 
 ## System Architecture
