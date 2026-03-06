@@ -232,7 +232,30 @@ with c3:
     st.subheader("📈 Dynamic Analytics")
     if len(st.session_state.history["year"]) > 0:
         df = pd.DataFrame(st.session_state.history).set_index("year")
-        st.line_chart(df[["population", "disease_rate", "climate", "legitimacy"]], height=250, use_container_width=True)
+        
+        # Using matplotlib instead of st.line_chart to avoid Altair compatibility bugs on Python 3.14
+        fig, ax1 = plt.subplots(figsize=(8, 4))
+        ax1.set_xlabel("Year")
+        ax1.set_ylabel("Population", color="tab:blue")
+        ax1.plot(df.index, df["population"], color="tab:blue", label="Population")
+        ax1.tick_params(axis="y", labelcolor="tab:blue")
+        
+        # Secondary axis for the percentage/index metrics (0-100 scale)
+        ax2 = ax1.twinx()
+        ax2.set_ylabel("Index (0-100)", color="tab:gray")
+        ax2.plot(df.index, df["disease_rate"], color="tab:red", linestyle="--", label="Disease Rate")
+        ax2.plot(df.index, df["climate"], color="tab:orange", linestyle="-.", label="Climate")
+        ax2.plot(df.index, df["legitimacy"], color="tab:green", linestyle=":", label="Legitimacy")
+        ax2.set_ylim(0, 100)
+        
+        # Combine legends
+        lines_1, labels_1 = ax1.get_legend_handles_labels()
+        lines_2, labels_2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc="upper left", bbox_to_anchor=(1.05, 1))
+        
+        fig.tight_layout()
+        st.pyplot(fig)
+        plt.close(fig)
 
 if st.session_state.era_reports:
     with st.expander(f"📜 Era Archives ({len(st.session_state.era_reports)})"):
