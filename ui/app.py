@@ -1,55 +1,39 @@
 """
 app.py
 ------
-CIV-AI Streamlit Dashboard
-
-Interactive civilization simulator combining:
-  - Deterministic simulation engine
-  - Random Forest ML predictor with feature importance (XAI)
-  - Gemini 2.0 Flash generative event engine
-  - 8-variable historical tracking and time-series charts
-  - Legitimacy / revolution system
-  - Scenario seed selection
+CIV-AI Streamlit Dashboard — v2 (Dynamic UI Expansion)
 """
 
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import time
 
-from src.world_state import WorldState, POLICY_NAMES, SCENARIO_SEEDS
+from src.world_state import WorldState, SCENARIO_SEEDS
 from src.simulation_engine import step, apply_event, is_revolution_triggered
 from src.event_engine import generate_event
 from src.ml_model import load_model, predict_and_explain
 
 # ---------------------------------------------------------------------------
-# Page config
+# Page config & CSS
 # ---------------------------------------------------------------------------
 
-st.set_page_config(
-    page_title="CIV-AI Civilization Simulator",
-    page_icon="🌍",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-
-# ---------------------------------------------------------------------------
-# Custom CSS
-# ---------------------------------------------------------------------------
+st.set_page_config(page_title="CIV-AI Simulator v2", page_icon="🌍", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
     .main-title { font-size: 2.4rem; font-weight: 800; }
-    .subtitle   { color: #888; font-size: 1rem; margin-top: -12px; }
-    .event-box  { background: #1a1a2e; border-left: 4px solid #e94560;
-                  padding: 12px 16px; border-radius: 6px; margin-top: 12px; }
-    .revolution { background: #3b0d0d; border-left: 4px solid #ff0000;
-                  padding: 12px 16px; border-radius: 6px; }
+    .event-box  { background: #1a1a2e; border-left: 4px solid #4fc3f7; padding: 12px 16px; border-radius: 6px; margin-top: 12px; }
+    .boss-box   { background: #2a0a0a; border-left: 6px solid #ff0000; padding: 16px; border-radius: 8px; margin-top: 16px; 
+                  animation: pulse 2s infinite; }
+    .revolution { background: #3b0d0d; border-left: 4px solid #ff0000; padding: 12px 16px; border-radius: 6px; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); } }
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
-# Session state initialisation
+# Session State Init
 # ---------------------------------------------------------------------------
 
 def _init_session(scenario_name: str = "Balanced Start"):
@@ -58,253 +42,199 @@ def _init_session(scenario_name: str = "Balanced Start"):
     st.session_state.year     = ws.year
     st.session_state.history  = {k: [] for k in
         ["year", "population", "food", "energy", "technology",
-         "pollution", "economy", "happiness", "legitimacy"]}
-    st.session_state.last_event     = None
-    st.session_state.revolution     = False
-    st.session_state.era_reports    = []
-    st.session_state.started        = True
-
+         "pollution", "economy", "happiness", "legitimacy",
+         "disease_rate", "military", "climate"]}
+    st.session_state.last_event   = None
+    st.session_state.boss_active  = False
+    st.session_state.revolution   = False
+    st.session_state.era_reports  = []
+    st.session_state.started      = True
 
 if "started" not in st.session_state:
     _init_session()
 
-# Load ML model once
 if "model" not in st.session_state:
     model, centroid_data = load_model()
     st.session_state.model         = model
     st.session_state.centroid_data = centroid_data
 
+ws = WorldState.from_dict(st.session_state.state)
+
 
 # ---------------------------------------------------------------------------
-# Sidebar
+# Sidebar (Simulation Controls & Boss Triggers)
 # ---------------------------------------------------------------------------
 
 with st.sidebar:
-    st.markdown("## ⚙️ Simulation Controls")
+    st.markdown("## ⚙️ Simulation")
 
-    # Scenario seed picker (only before year 2)
+    # Boss Trigger (Every 8 Years)
+    if st.session_state.year % 8 == 0 and st.session_state.year > 1:
+        st.session_state.boss_active = True
+
     if st.session_state.year <= 1:
         scenario = st.selectbox("Starting Scenario", list(SCENARIO_SEEDS.keys()))
-        if st.button("🔄 New Game"):
+        if st.button("🔄 Restart Game"):
             _init_session(scenario)
             st.rerun()
-
+            
     st.divider()
 
-    policy_label = st.radio(
-        "📜 National Policy",
-        ["🌾 Agriculture", "🏭 Industry", "🎓 Education", "🌿 Environment"],
-    )
-    policy_map = {
-        "🌾 Agriculture": "agriculture",
-        "🏭 Industry":    "industry",
-        "🎓 Education":   "education",
-        "🌿 Environment": "environment",
-    }
-    policy = policy_map[policy_label]
+    if st.session_state.boss_active:
+        st.error("⚠️ **GLOBAL SHIFT IMMINENT**")
+        st.markdown("A major paradigm shift is occurring. Choose how your civilization adapts:")
+        boss_choice = st.selectbox("Select Scenario Infusion", ["(Select Paradigm)"] + list(SCENARIO_SEEDS.keys()))
+        if st.button("🚨 TRIGGER BOSS SHIFT", type="primary") and boss_choice != "(Select Paradigm)":
+            # Apply the scenario properties over the current state
+            seed = SCENARIO_SEEDS[boss_choice]
+            ws.population = int(ws.population * 0.7 + seed.population * 0.3)
+            ws.disease_rate = max(ws.disease_rate, seed.disease_rate)
+            ws.military = max(ws.military, seed.military)
+            ws.climate = max(ws.climate, seed.climate)
+            ws.technology += seed.technology * 0.2
+            ws.year += 1  # consume a year
+            st.session_state.state = ws.to_dict()
+            st.session_state.boss_active = False
+            st.session_state.last_event = {
+                "event": f"The world paradigm violently shifted towards a **{boss_choice}** reality. Demographics and baseline parameters have permanently altered.",
+                "severity": "BOSS"
+            }
+            st.rerun()
+    else:
+        # Standard Turn
+        policy_label = st.radio(
+            "📜 National Policy",
+            ["🌾 Agriculture", "🏭 Industry", "🎓 Education", "🌿 Environment", "🛡️ Military", "🏥 Healthcare"],
+        )
+        policy_map = {
+            "🌾 Agriculture": "agriculture",  "🏭 Industry": "industry",
+            "🎓 Education":   "education",    "🌿 Environment": "environment",
+            "🛡️ Military":    "military_buildup", "🏥 Healthcare": "healthcare"
+        }
+        policy = policy_map[policy_label]
 
-    run_btn = st.button("▶️  Advance One Year", use_container_width=True, type="primary")
+        if st.button("▶️ Advance One Year", use_container_width=True, type="primary"):
+            # Record History
+            for key in st.session_state.history:
+                val = getattr(ws, key) if hasattr(ws, key) else ws.year
+                st.session_state.history[key].append(val)
+
+            ws_new = step(ws, policy)
+            
+            # Events
+            is_boss_year = (ws_new.year % 12 == 0) # Natural boss events every 12 yrs besides the 8-yr player choice
+            event = generate_event(ws_new, is_boss=is_boss_year)
+            ws_new = apply_event(ws_new, event.get("effects", {}))
+            ws_new = ws_new.apply_bounds()
+            st.session_state.last_event = event
+
+            if is_revolution_triggered(ws_new):
+                ws_new.legitimacy = 35.0
+                ws_new.economy *= 0.60
+                ws_new.military *= 0.50
+                st.session_state.revolution = True
+
+            # Era Report
+            if ws_new.year % 10 == 0:
+                tone = "prosperity" if ws_new.happiness > 60 else "struggle"
+                st.session_state.era_reports.append(
+                    {"title": f"Era {ws_new.year}", "body": f"Decade ended in {tone}. Pop: {ws_new.population:,} | Tech: {ws_new.technology:.0f}"}
+                )
+
+            st.session_state.state = ws_new.to_dict()
+            st.rerun()
 
     st.divider()
     if st.session_state.last_event:
         ev = st.session_state.last_event
-        sev_color = {"minor": "#4CAF50", "moderate": "#FF9800", "major": "#F44336"}.get(ev.get("severity","minor"), "#888")
+        is_boss = ev.get("severity") == "BOSS"
+        box_class = "boss-box" if is_boss else "event-box"
+        color = "#ff4444" if is_boss else "#4fc3f7"
         st.markdown(f"""
-        <div class="event-box">
-        <b style="color:{sev_color}">📰 Year {st.session_state.year - 1} Event — {ev.get('severity','?').upper()}</b><br><br>
-        {ev.get('event','No event description.')}
+        <div class="{box_class}">
+        <b style="color:{color}">📰 Year {st.session_state.year - 1} — {ev.get('severity','?').upper()} EVENT</b><br><br>
+        {ev.get('event','')}
         </div>""", unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
-# Main header
+# Main UI - Dynamic Metric Visuals
 # ---------------------------------------------------------------------------
-
-state_dict = st.session_state.state
-ws         = WorldState.from_dict(state_dict)
 
 st.markdown(f'<div class="main-title">🌍 CIV-AI — Year {ws.year}</div>', unsafe_allow_html=True)
 
-# Collapse check
 if ws.is_collapsed():
-    st.error("💀 **Civilisation Collapse** — Your society has ceased to exist. Start a new game.")
-    if st.button("Restart"):
-        _init_session()
-        st.rerun()
+    st.error("💀 **Civilization Collapse** — Your society has ceased to exist.")
     st.stop()
-
-# Revolution check
 if st.session_state.revolution:
-    st.markdown('<div class="revolution"><b>🔥 REVOLUTION!</b> Public trust collapsed to zero. '
-                "A forced governmental change has occurred — legitimacy reset, but economy took a heavy hit.</div>",
-                unsafe_allow_html=True)
+    st.markdown('<div class="revolution"><b>🔥 REVOLUTION!</b> Legitimacy collapsed. Military and Economy decimated.</div>', unsafe_allow_html=True)
     st.session_state.revolution = False
 
+def get_delta(metric):
+    hist = st.session_state.history[metric]
+    if len(hist) < 1: return None
+    diff = getattr(ws, metric) - hist[-1]
+    if abs(diff) < 0.01: return None
+    return int(diff) if isinstance(diff, int) or metric=="population" else float(diff)
 
-# ---------------------------------------------------------------------------
-# Metrics row
-# ---------------------------------------------------------------------------
+m1, m2, m3, m4, m5, m6 = st.columns(6)
+m1.metric("🧑‍🤝‍🧑 Population", f"{ws.population:,}", delta=get_delta("population"))
+m2.metric("🌾 Food", f"{ws.food:,.0f}", delta=get_delta("food"))
+m3.metric("⚡ Energy", f"{ws.energy:,.0f}", delta=get_delta("energy"))
+m4.metric("💰 Economy", f"${ws.economy:.1f}T", delta=get_delta("economy"))
+m5.metric("😊 Happiness", f"{ws.happiness:.1f}%", delta=get_delta("happiness"))
+m6.metric("🏛 Legitimacy", f"{ws.legitimacy:.1f}%", delta=get_delta("legitimacy"))
 
-m_cols = st.columns(8)
-fields = [
-    ("🧑‍🤝‍🧑 People",  f"{ws.population:,}"),
-    ("🌾 Food",       f"{ws.food:,.0f}"),
-    ("⚡ Energy",     f"{ws.energy:,.0f}"),
-    ("🔬 Tech",       f"Lv {ws.technology:.0f}"),
-    ("🌫 Pollution",  f"{ws.pollution:.1f}/100"),
-    ("💰 Economy",    f"${ws.economy:.1f}T"),
-    ("😊 Happiness",  f"{ws.happiness:.1f}%"),
-    ("🏛 Legitimacy", f"{ws.legitimacy:.1f}%"),
-]
-for col, (label, val) in zip(m_cols, fields):
-    col.metric(label, val)
+st.markdown("<br>", unsafe_allow_html=True)
 
-
-# ---------------------------------------------------------------------------
-# ML Prediction & Explainability
-# ---------------------------------------------------------------------------
+t1, t2, t3, t4, t5 = st.columns(5)
+t1.metric("🔬 Technology", f"Lv {ws.technology:.0f}", delta=get_delta("technology"))
+t2.metric("🌫 Pollution", f"{ws.pollution:.1f}/100", delta=get_delta("pollution"), delta_color="inverse")
+t3.metric("🛡️ Military", f"{ws.military:.1f}/100", delta=get_delta("military"))
+t4.metric("🦠 Disease", f"{ws.disease_rate:.1f}/100", delta=get_delta("disease_rate"), delta_color="inverse")
+t5.metric("🔥 Climate", f"{ws.climate:.1f}/100", delta=get_delta("climate"), delta_color="inverse")
 
 st.divider()
-ml_col, xai_col = st.columns([1, 2])
 
-with ml_col:
-    st.subheader("🤖 ML Prediction")
-    if st.session_state.model:
-        pred_delta, importances, confidence = predict_and_explain(
-            st.session_state.model,
-            st.session_state.centroid_data,
-            ws, policy
-        )
-        conf_color = {"HIGH": "🟢", "MEDIUM": "🟡", "LOW": "🔴", "UNKNOWN": "⚪"}.get(confidence, "⚪")
-        direction = "📈 +" if pred_delta >= 0 else "📉 "
-        st.metric("Predicted Population Δ", f"{direction}{pred_delta:,}")
-        st.caption(f"Model Confidence: {conf_color} **{confidence}**")
-        if confidence == "LOW":
-            st.warning("⚠️ The current state is far outside the training distribution. "
-                       "Prediction reliability is reduced.")
+# ---------------------------------------------------------------------------
+# ML Target Predictor & Dynamic Graphs
+# ---------------------------------------------------------------------------
+
+policy_current = "agriculture" if st.session_state.boss_active else policy_map.get(policy_label, "agriculture")
+
+c1, c2, c3 = st.columns([1, 1.5, 1.5])
+
+with c1:
+    st.subheader("🤖 ML Predictor")
+    if st.session_state.model and not st.session_state.boss_active:
+        pred_delta, importances, conf = predict_and_explain(st.session_state.model, st.session_state.centroid_data, ws, policy_current)
+        st.metric("Predicted Next Year Δ", f"{pred_delta:,}", delta=pred_delta)
+        conf_color = {"HIGH":"🟢","MEDIUM":"🟡","LOW":"🔴"}.get(conf,"⚪")
+        st.caption(f"Confidence: {conf_color} **{conf}**")
+        if conf == "LOW": st.warning("State anomalous. Low reliability.")
     else:
-        st.info("Run `python training/train.py` to activate ML predictions.")
         importances = {}
+        st.info("Predictor paused during Boss events or missing model.")
 
-with xai_col:
-    st.subheader("📊 Feature Importance (Explainability)")
-    if importances:
-        imp_df = pd.DataFrame({
-            "Feature":    list(importances.keys()),
-            "Importance": list(importances.values()),
-        }).sort_values("Importance", ascending=True)
-
-        fig, ax = plt.subplots(figsize=(6, 3.5))
-        bars = ax.barh(imp_df["Feature"], imp_df["Importance"],
-                       color=["#4fc3f7" if i < len(imp_df)-1 else "#e94560"
-                              for i in range(len(imp_df))])
-        ax.set_xlabel("Feature Importance")
-        ax.set_title("What's driving this prediction?", fontsize=11)
+with c2:
+    st.subheader("📊 Model Explainability (XAI)")
+    if importances and not st.session_state.boss_active:
+        imp_df = pd.DataFrame({"Feature": list(importances.keys()), "Importance": list(importances.values())}).sort_values("Importance")
+        fig, ax = plt.subplots(figsize=(5, 3))
+        ax.barh(imp_df["Feature"], imp_df["Importance"], color="#4fc3f7")
         ax.xaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
+        ax.set_title("Active Feature Influence")
         fig.tight_layout()
         st.pyplot(fig)
         plt.close(fig)
-    else:
-        st.caption("Feature importance chart appears after model is trained.")
 
-
-# ---------------------------------------------------------------------------
-# Historical Charts
-# ---------------------------------------------------------------------------
-
-st.divider()
-st.subheader("📈 Civilization History")
-
-if len(st.session_state.history["year"]) > 0:
-    df_hist = pd.DataFrame(st.session_state.history).set_index("year")
-    chart_cols = st.columns(4)
-
-    for col, (metric, color) in zip(chart_cols, [
-        ("population", "#4fc3f7"),
-        ("pollution",  "#e94560"),
-        ("economy",    "#66bb6a"),
-        ("legitimacy", "#ffa726"),
-    ]):
-        with col:
-            fig, ax = plt.subplots(figsize=(3.5, 2.5))
-            ax.plot(df_hist.index, df_hist[metric], color=color, linewidth=2)
-            ax.fill_between(df_hist.index, df_hist[metric], alpha=0.15, color=color)
-            ax.set_title(metric.capitalize(), fontsize=10)
-            ax.set_xlabel("Year", fontsize=8)
-            ax.tick_params(labelsize=7)
-            fig.tight_layout()
-            col.pyplot(fig)
-            plt.close(fig)
-else:
-    st.caption("Charts will appear after the first year is simulated.")
-
-
-# ---------------------------------------------------------------------------
-# Era Report Card (every 10 years) — Novel Feature #5
-# ---------------------------------------------------------------------------
+with c3:
+    st.subheader("📈 Dynamic Analytics")
+    if len(st.session_state.history["year"]) > 0:
+        df = pd.DataFrame(st.session_state.history).set_index("year")
+        st.line_chart(df[["population", "disease_rate", "climate", "legitimacy"]], height=250, use_container_width=True)
 
 if st.session_state.era_reports:
-    with st.expander(f"📜 Era Reports ({len(st.session_state.era_reports)} eras)", expanded=False):
-        for report in reversed(st.session_state.era_reports):
-            st.markdown(f"**{report['title']}**")
-            st.markdown(report['body'])
-            st.divider()
-
-
-# ---------------------------------------------------------------------------
-# Year advance logic
-# ---------------------------------------------------------------------------
-
-def _era_report(state: WorldState) -> dict:
-    """Generate a brief narrative era report every 10 years."""
-    pop_m = state.population / 1_000_000
-    if state.happiness > 70 and state.economy > 60 and state.pollution < 30:
-        tone = "a golden age of prosperity and clean skies"
-    elif state.pollution > 70:
-        tone = "an ecologically troubled era marked by toxic skies"
-    elif state.legitimacy < 20:
-        tone = "a period of deep political instability"
-    elif state.population < 100_000:
-        tone = "near-collapse — a shadow of former glory"
-    else:
-        tone = "steady if unspectacular development"
-
-    return {
-        "title": f"⏳ Era Report — End of Year {state.year - 1}",
-        "body":  (f"The decade closed in {tone}. "
-                  f"Population: **{pop_m:.2f}M** | "
-                  f"Economy: ${state.economy:.1f}T | "
-                  f"Pollution: {state.pollution:.0f}/100 | "
-                  f"Happiness: {state.happiness:.0f}%"),
-    }
-
-
-if run_btn:
-    ws_current = WorldState.from_dict(st.session_state.state)
-
-    # Record history snapshot
-    for key in st.session_state.history:
-        val = getattr(ws_current, key) if hasattr(ws_current, key) else ws_current.year
-        st.session_state.history[key].append(val)
-
-    # Advance simulation (policy + population + legitimacy + bounds + year++)
-    ws_new = step(ws_current, policy)
-
-    # Generate event (Gemini or local fallback)
-    event = generate_event(ws_new)
-    ws_new = apply_event(ws_new, event.get("effects", {}))
-    ws_new = ws_new.apply_bounds()
-    st.session_state.last_event = event
-
-    # Revolution check
-    if is_revolution_triggered(ws_new):
-        ws_new.legitimacy = 35.0   # stabilise after revolution
-        ws_new.economy   *= 0.70
-        st.session_state.revolution = True
-
-    # Era report every 10 years
-    if ws_new.year % 10 == 0:
-        st.session_state.era_reports.append(_era_report(ws_new))
-
-    st.session_state.state = ws_new.to_dict()
-    st.rerun()
+    with st.expander(f"📜 Era Archives ({len(st.session_state.era_reports)})"):
+        for r in reversed(st.session_state.era_reports):
+            st.markdown(f"**{r['title']}**: {r['body']}")

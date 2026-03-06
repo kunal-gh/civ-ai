@@ -60,21 +60,29 @@ The civilization is represented as an **8-dimensional continuous state vector** 
 | `economy` | 0 → ∞ | Drives happiness equilibrium | Strong co-predictor with food |
 | `happiness` | 0–100 | Equilibrium-based; influences legitimacy | Indirect population signal |
 | `legitimacy` | 0–100 | **⭐ Original feature** — decays under low happiness; revolution at 0 | Collapse risk signal |
+| `disease_rate` | 0-100 | Epidemic pressure. Builds under crowding & malnutrition | Disease mortality coefficient |
+| `military` | 0-100 | Defense capability. Decays without investment. Protects vs events | Security signal |
+| `climate` | 0-100 | Long-run irreversible damage from pollution. Destroys food | Compounding penalty |
 
-> **Design note on `legitimacy`**: This is an original addition not in the base specification. It models public institutional trust and creates a *second survival axis* beyond resource management. A player can have abundant food and economy but still trigger collapse through sustained social neglect — making Education and Environment policy genuinely valuable in the long run.
+> **Design note on `legitimacy` & v2 mechanics**: Legitimacy creates a *second survival axis* beyond resources. The v2 update introduces **Plague Inc-style disease pressure and military buildup**, making the simulation dramatically more dynamic and unpredictable.
 
 ---
 
-## Policy System
+## Policy System & Boss Scenarios
 
-Four policies are available each year. Each modifies the world state deterministically:
+Six policies are available each year. Each modifies the world state deterministically:
 
-| Policy | `food` | `economy` | `pollution` | `technology` | `happiness` | Strategic Role |
+| Policy | `food` | `economy` | `pollution` | `disease` | `military` | `happiness` |
 |---|---|---|---|---|---|---|
-| 🌾 Agriculture | ×1.05 | — | +1.0 | — | +1.0 | Survival: prevents starvation |
-| 🏭 Industry | — | ×1.05 | +3.0 | — | −1.0 | Growth: economy scaling |
-| 🎓 Education | — | — | — | +2.0/yr | +2.0 | Long-game: tech multiplier unlock |
-| 🌿 Environment | — | ×0.98 | ×0.95 | — | +3.0 | Stability: legitimacy preservation |
+| 🌾 Agriculture | ×1.05 | — | +1.0 | -2.0 | — | +1.0 |
+| 🏭 Industry | — | ×1.06 | +4.0 | — | — | −1.0 |
+| 🎓 Education | — | — | — | -1.5 | — | +2.0 |
+| 🌿 Environment | — | ×0.98 | ×0.93 | -1.0 | — | +3.0 |
+| 🛡️ Military | — | ×0.96 | — | — | +8.0 | -2.0 |
+| 🏥 Healthcare | ×1.0 | ×0.97 | — | -10.0| — | +4.0 |
+
+### 💥 Boss Scenarios (v2)
+Every 8-10 years, a **Boss Scenario** triggers. These are massive, unpredictable paradigm shifts that force the player to select a radical new trajectory. They overwrite core baseline stats instantly, meaning a thriving utopia can become a Plague State in a single turn, forcing rapid strategic adaptation.
 
 ### Technology Multipliers (Novel Feature)
 
