@@ -157,7 +157,7 @@ function renderSidebar(s) {
 
   // Collapse Risk
   const risk = collapseRisk(s);
-  const rColor = risk < 25 ? '#39ff14' : risk < 50 ? '#ffb400' : risk < 75 ? '#ff6600' : '#ff2244';
+  const rColor = risk < 25 ? '#a366ff' : risk < 50 ? '#c299ff' : risk < 75 ? '#ff4db8' : '#e60073';
   const rLabel = risk < 25 ? 'LOW' : risk < 50 ? 'MODERATE' : risk < 75 ? 'HIGH' : 'CRITICAL';
   document.getElementById('collapse-risk-val').textContent = `${risk}% — ${rLabel}`;
   document.getElementById('collapse-risk-val').style.color = rColor;
@@ -587,11 +587,11 @@ async function fetchMLPredictions(s) {
 function renderMLPanel(container, data) {
   const icons = {'Δ Pop':'👥','Δ Eco':'💰','Δ Clim':'🔥','Δ Dis':'🦠','Δ Leg':'🏛'};
   const inverse = new Set(['Δ Clim','Δ Dis']);
-  const confColor = { HIGH:'#39ff14', MEDIUM:'#ffb400', LOW:'#ff2244', LOCAL:'#cc44ff' };
+  const confColor = { HIGH:'#a366ff', MEDIUM:'#c299ff', LOW:'#ff4db8', LOCAL:'#8a4fff' };
   let html = `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">`;
   for (const [lbl, val] of Object.entries(data.predictions || {})) {
     const good = inverse.has(lbl) ? val <= 0 : val >= 0;
-    const color = good ? '#39ff14' : '#ff2244';
+    const color = good ? '#a366ff' : '#ff4db8';
     const sign = val > 0 ? '+' : '';
     html += `<div style="flex:1;min-width:75px;background:var(--bg-card);border:1px solid var(--border);border-radius:2px;padding:7px 8px;text-align:center">
       <div style="font-size:1.1rem">${icons[lbl]||'→'}</div>

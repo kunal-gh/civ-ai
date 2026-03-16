@@ -2,13 +2,31 @@
 
 /* ── TOKENS ── */
 :root {
-  --bg:       #03040a; --bg-panel: #070812; --bg-card: #0c0d1a; --bg-hover: #12132a;
-  --green:    #39ff14; --green-dim:#1a6b07; --green-glow: 0 0 16px rgba(57,255,20,.6);
-  --amber:    #ffb400; --amber-dim:#7a5500;
-  --red:      #ff2244; --red-dim:  #7a1022;
-  --cyan:     #00ffee; --purple: #cc44ff;
-  --txt:      #d6e3c8; --txt-dim: #637255;
-  --border:   #151928; --border-hi: #202838;
+  /* Monochromatic Nebula Palette */
+  --bg:       #080414; /* Deepest space */
+  --bg-panel: #110826; 
+  --bg-card:  #1b0d3a; 
+  --bg-hover: #2a1554;
+  
+  --green:    #a366ff; /* Primary bright violet */
+  --green-dim:#4a238c;
+  --green-glow: 0 0 16px rgba(163,102,255,.6);
+  
+  --amber:    #c299ff; /* Secondary soft lavender */
+  --amber-dim:#5a3399;
+  
+  --red:      #ff4db8; /* Magenta for danger */
+  --red-dim:  #8c165a;
+  
+  --cyan:     #8a4fff; /* Blueish-purple */
+  --purple:   #d9b3ff; /* Pinkish-purple */
+  
+  --txt:      #e6d9ff; /* Soft violet white */
+  --txt-dim:  #8b7c9e;
+  
+  --border:   #341d5e; 
+  --border-hi:#543292;
+  
   --font-vt:  'VT323', monospace;
   --font-mono:'Share Tech Mono', monospace;
   --font-game:'Bungee', cursive;
@@ -24,7 +42,14 @@ button { cursor: pointer; font-family: var(--font-mono); }
 #app, #start-screen, #ending-screen { position: relative; z-index: 10; }
 
 /* ── CRT BODY ── */
-html, body { height: 100vh; overflow: hidden; background: transparent; color: var(--txt); font-family: var(--font-mono); }
+html, body { 
+  height: 100vh; 
+  overflow: hidden; 
+  background-color: var(--bg); 
+  background-image: radial-gradient(circle at 50% 50%, #1b0d3a 0%, #080414 100%);
+  color: var(--txt); 
+  font-family: var(--font-mono); 
+}
 
 /* Scanlines */
 body::after {
@@ -71,10 +96,10 @@ body { animation: crt-flicker 9s infinite; }
 .res-val { font-family: var(--font-vt); font-size: 1.3rem; color: var(--txt); }
 .res-track { height: 8px; background: var(--border); border-radius: 2px; overflow: hidden; border: 1px solid #000; }
 .res-fill { height: 100%; border-radius: 1px; transition: width .8s ease; }
-.res-fill-food     { background: linear-gradient(90deg,#1a6b07,#39ff14); }
-.res-fill-energy   { background: linear-gradient(90deg,#7a5500,#ffb400); }
-.res-fill-water    { background: linear-gradient(90deg,#004488,#00aaff); }
-.res-fill-minerals { background: linear-gradient(90deg,#5a3a00,#c88832); }
+.res-fill-food     { background: linear-gradient(90deg, var(--bg-hover), var(--green)); }
+.res-fill-energy   { background: linear-gradient(90deg, var(--bg-hover), var(--amber)); }
+.res-fill-water    { background: linear-gradient(90deg, var(--bg-hover), var(--cyan)); }
+.res-fill-minerals { background: linear-gradient(90deg, var(--bg-hover), var(--purple)); }
 
 /* Opinion Bars */
 .op-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -83,7 +108,7 @@ body { animation: crt-flicker 9s infinite; }
 .op-fill { height: 100%; border-radius: 1px; transition: width .6s ease; }
 .op-fill-trust { background: var(--cyan); }
 .op-fill-fear  { background: var(--red); }
-.op-fill-anger { background: #ff6600; }
+.op-fill-anger { background: #b3398c; }
 .op-fill-hope  { background: var(--green); }
 .op-val { font-family: var(--font-vt); font-size: 1.2rem; width: 32px; text-align: right; }
 

@@ -26,10 +26,10 @@ function initGalaxy() {
   const colorArray = new Float32Array(starCount * 3);
 
   const starColors = [
-    new THREE.Color(0xffffff), // white
-    new THREE.Color(0x39ff14), // neon green
-    new THREE.Color(0x00ffee), // cyan
-    new THREE.Color(0xffb400)  // amber
+    new THREE.Color(0xa366ff), // bright violet
+    new THREE.Color(0xc299ff), // soft lavender
+    new THREE.Color(0x8a4fff), // blueish purple
+    new THREE.Color(0xff4db8)  // magenta
   ];
 
   for(let i=0; i < starCount * 3; i+=3) {
@@ -69,7 +69,7 @@ function initGalaxy() {
   // A glowing wireframe sphere representing Earth, placed far behind the camera initially
   const earthGeo = new THREE.SphereGeometry(120, 32, 32);
   const earthMat = new THREE.MeshBasicMaterial({
-    color: 0x00ffee,
+    color: 0x8a4fff,
     wireframe: true,
     transparent: true,
     opacity: 0.0 // hidden initially
@@ -162,7 +162,7 @@ function createFlash(callback) {
   const flash = document.createElement('div');
   flash.style.position = 'fixed';
   flash.style.inset = '0';
-  flash.style.backgroundColor = '#fff';
+  flash.style.backgroundColor = '#1b0d3a';
   flash.style.zIndex = '9999';
   flash.style.opacity = '0';
   flash.style.transition = 'opacity 0.2s ease-out';
