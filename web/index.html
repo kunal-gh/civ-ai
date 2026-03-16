@@ -7,8 +7,13 @@
 <meta name="description" content="An AI-powered civilization decision simulator. Shape humanity's future through strategic choices and interacting systems." />
 <link rel="stylesheet" href="css/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Three.js for 3D Galaxy Background -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
+
+<!-- 3D Background Canvas -->
+<canvas id="bg-canvas"></canvas>
 
 <!-- ========== START SCREEN ========== -->
 <div id="start-screen" class="active">
@@ -197,6 +202,7 @@
 <script src="js/data.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/adaptive.js"></script>
+<script src="js/galaxy.js"></script>
 <script src="js/game.js"></script>
 </body>
 </html>

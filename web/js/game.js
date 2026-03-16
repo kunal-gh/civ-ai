@@ -66,30 +66,45 @@ function renderStartScreen() {
 
 async function startGame() {
   if (!G.selectedIdeology) return;
-  let state = new WorldState();
-  state = applyIdeology(state, G.selectedIdeology);
-  G.state = state;
-  G.director = new AIDirector();
-  G.emotionTracker = new EmotionInference();
-  G.competingCivs = CIV_PRESETS.map(c => JSON.parse(JSON.stringify(c)));
-  G.history = []; G.usedDilemmas = new Set(); G.usedCrises = new Set();
-  G.triggeredDiscoveries = new Set(); G.playerScoreHistory = [];
-  G.advancing = false;
+  
+  const startBtn = document.getElementById('start-btn');
+  if (startBtn) {
+    startBtn.disabled = true;
+    startBtn.innerText = "CALCULATING TRAJECTORY...";
+  }
 
-  document.getElementById('start-screen').classList.remove('active');
-  document.getElementById('app').style.display = 'grid';
+  const doStart = async () => {
+    let state = new WorldState();
+    state = applyIdeology(state, G.selectedIdeology);
+    G.state = state;
+    G.director = new AIDirector();
+    G.emotionTracker = new EmotionInference();
+    G.competingCivs = CIV_PRESETS.map(c => JSON.parse(JSON.stringify(c)));
+    G.history = []; G.usedDilemmas = new Set(); G.usedCrises = new Set();
+    G.triggeredDiscoveries = new Set(); G.playerScoreHistory = [];
+    G.advancing = false;
 
-  renderAll();
-  initChart();
-  addTimeline(1, `Civilization founded under ${IDEOLOGIES[G.selectedIdeology].name}.`);
+    document.getElementById('start-screen').classList.remove('active');
+    document.getElementById('app').style.display = 'grid';
 
-  // Welcome news flash (no typewriter delay)
-  setNewsFlash(
-    '>> SYSTEM INITIALIZED',
-    null,
-    `${IDEOLOGIES[G.selectedIdeology].icon} ${IDEOLOGIES[G.selectedIdeology].name.toUpperCase()} PROTOCOL ACTIVE\n\nWelcome, Administrator. Your civilization is online.\nYear 1 begins now. Select a directive to advance time.\n\nRemember: Every choice has cascading consequences.\nThe AI Director watches. The world adapts.`,
-    []
-  );
+    renderAll();
+    initChart();
+    addTimeline(1, `Civilization founded under ${IDEOLOGIES[G.selectedIdeology].name}.`);
+
+    // Welcome news flash (no typewriter delay)
+    setNewsFlash(
+      '>> SYSTEM INITIALIZED',
+      null,
+      `${IDEOLOGIES[G.selectedIdeology].icon} ${IDEOLOGIES[G.selectedIdeology].name.toUpperCase()} PROTOCOL ACTIVE\n\nWelcome, Administrator. Your civilization is online.\nYear 1 begins now. Select a directive to advance time.\n\nRemember: Every choice has cascading consequences.\nThe AI Director watches. The world adapts.`,
+      []
+    );
+  };
+
+  if (window.flyToEarth) {
+    window.flyToEarth(doStart);
+  } else {
+    doStart();
+  }
 }
 
 // ==================================================
