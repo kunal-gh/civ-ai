@@ -6,6 +6,7 @@
 <title>AXIOM — Civilization Decision Simulator</title>
 <meta name="description" content="An AI-powered civilization decision simulator. Shape humanity's future through strategic choices and interacting systems." />
 <link rel="stylesheet" href="css/style.css" />
+<link href="https://fonts.googleapis.com/css2?family=Jura:wght@400;600;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <!-- Three.js for 3D Galaxy Background -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -106,25 +107,27 @@
             <span class="news-sev" id="news-sev-badge" style="display:none"></span>
           </div>
           <div id="news-flash-terminal">
-            <div id="news-flash-title"></div>
+            <div id="news-flash-title" style="font-weight:700; font-size:1.1rem; color:var(--amber);"></div>
             <div id="news-flash-text">
-              Welcome, Administrator.<br><br>
-              Your civilization awaits your first directive.<br>
-              Select a policy below to begin Year 1.<br>
-              Every choice shapes the future.
+              Welcome, Commander.<br><br>
+              All core systems online. Awaiting your first imperative directive.<br>
+              Assess the dilemma and input your strategic response below.
             </div>
             <div id="news-effects"></div>
           </div>
         </div>
 
-        <!-- Choice Area -->
+        <!-- Choice Area (Replaced with NLP Text Input) -->
         <div id="choice-area">
           <div class="choice-hdr">
             <div class="choice-hdr-line"></div>
-            <span class="choice-hdr-txt" id="choice-hdr-txt">◈ SELECT ANNUAL DIRECTIVE ◈</span>
+            <span class="choice-hdr-txt" id="choice-hdr-txt">AUTHORIZE DIRECTIVE</span>
             <div class="choice-hdr-line"></div>
           </div>
-          <div id="policy-btns"></div>
+          <div id="nlp-container" style="display:flex; gap:10px; margin-top:12px;">
+            <input type="text" id="nlp-input" placeholder="e.g. 'Deploy military to quarantine the infected zone and distribute emergency rations...'" style="flex:1; background:var(--bg-card); border:1px solid var(--border-hi); color:var(--txt); padding:12px 16px; font-family:'Jura',sans-serif; font-size:1rem; outline:none; border-radius:2px;" autocomplete="off" />
+            <button id="nlp-submit-btn" style="background:var(--border-hi); border:1px solid var(--green-dim); color:var(--txt); padding:0 24px; font-family:'Jura',sans-serif; font-weight:700; letter-spacing:1px; border-radius:2px; transition:all 0.2s;">EXECUTE</button>
+          </div>
         </div>
 
       </div>

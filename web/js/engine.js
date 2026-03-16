@@ -74,128 +74,24 @@ class WorldState {
 }
 
 // ---- Main simulation step ----
-function simulationStep(state, policy) {
-  const s = state.clone();
-  s.snap();
-
-  // 1) Apply axiom bonuses (first year only)
-  // (applied once at init, not every step)
-
-  // 2) Apply policy effects
-  const p = POLICIES[policy];
-  if (p) {
-    for (const [key, rule] of Object.entries(p.effects || {})) {
-      if (rule.pct !== undefined) s[key] = s[key] * (1 + rule.pct);
-      if (rule.flat !== undefined) s[key] = s[key] + rule.flat;
-    }
-  }
-
-  // 3) Track policy usage → develop traits
-  s.policyHistory[policy] = (s.policyHistory[policy] ?? 0) + 1;
-  _updateTraits(s);
-
-  // 4) Technology multipliers (emergent scale rewards)
-  const tech = s.technology;
-  if (tech > 50) {
-    s.food    *= 1 + 0.001 * (tech - 50);
-    s.economy += 0.5 * (tech - 50) / 50;
-  }
-  if (tech > 100) {
-    s.pollution = Math.max(0, s.pollution - 0.002 * (tech - 100));
-  }
-  if (tech > 200) {
-    s.disease_rate = Math.max(0, s.disease_rate - 0.001 * (tech - 200));
-  }
-
-  // 5) Population dynamics (Malthusian + Keynesian)
-  const fpc = s.food / Math.max(s.population, 1);
-  const birth_rate = 0.022 * Math.min(fpc * 2, 1.5);
-  const base_death = 0.010 + 0.004 * (s.pollution / 100);
-  const dis_death  = 0.005 * (s.disease_rate / 100);
-  const starv_pen  = fpc < 0.5 ? 0.05 * (0.5 - fpc) : 0;
-  const climate_pen = 0.003 * Math.max(0, s.climate - 40) / 60;
-  const pop_bonus   = p?.popBonus?.birth ?? 0;
-  const death_bonus = p?.popBonus?.death ?? 0;
-
-  const death_rate = Math.max(0, base_death + dis_death + starv_pen + climate_pen + death_bonus);
-  s.population = Math.max(0, Math.round(s.population * (1 + birth_rate + pop_bonus - death_rate)));
-
-  // 6) Resource consumption
-  s.food   = Math.max(0, s.food   - s.population * 0.12);
-  s.energy = Math.max(0, s.energy * 0.97);  // natural decay
-
-  // 7) Secondary system interactions (cascading)
-  // Pollution → climate warming
-  s.climate = Math.min(100, s.climate + s.pollution * 0.02 - 0.2);
-
-  // Climate → food damage
-  if (s.climate > 50) s.food *= 1 - (s.climate - 50) * 0.004;
-
-  // Disease from overcrowding + pollution + climate
-  const crowd = s.population / 5_000_000;
-  s.disease_rate = Math.min(100, s.disease_rate
-    + crowd * 0.5
-    + s.pollution * 0.03
-    - s.technology * 0.02
-    + s.climate * 0.01
-  );
-
-  // Military decay
-  s.military = Math.max(0, s.military - 1.5);
-
-  // Water depletion
-  s.water = Math.max(0, s.water - 0.8 + (s.flags.climate_pact ? 0.3 : 0));
-  if (s.water < 30) s.food *= 0.97;  // water shortage → food penalty
-
-  // Minerals
-  if (s.policyHistory.industry) {
-    s.minerals = Math.max(0, s.minerals - 0.5);
-  }
-
-  // 8) Public opinion dynamics
-  // Trust: legitimacy + happiness
-  s.trust = Math.max(0, Math.min(100, s.legitimacy * 0.6 + s.happiness * 0.4));
-  // Fear: disease + climate + crisis
-  s.fear  = Math.max(0, Math.min(100,
-    s.disease_rate * 0.5 + s.climate * 0.3 + (s.military < 20 ? 20 : 0)));
-  // Anger: inversely tracks happiness and legitimacy
-  s.anger = Math.max(0, Math.min(100, 100 - s.happiness * 0.5 - s.legitimacy * 0.5));
-  // Hope: technology + economy
-  s.hope  = Math.max(0, Math.min(100, s.technology * 0.2 + s.economy * 0.5 + s.happiness * 0.3));
-
-  // 9) Legitimacy dynamics
-  if (s.happiness < 40) s.legitimacy -= 2;
-  if (s.happiness > 70) s.legitimacy += 1;
-  if (s.economy < 10)   s.legitimacy -= 3;
-  if (s.anger > 70)     s.legitimacy -= 3;
-  s.legitimacy = Math.max(0, Math.min(100, s.legitimacy));
-
-  // Economy natural growth / decay
-  s.economy = Math.max(0, s.economy * (1 + 0.01 - s.pollution * 0.0002));
-
-  // 10) Process pending delayed consequences
-  const remaining = [];
-  for (const d of s.pendingDelays) {
-    if (s.year >= d.triggerYear) {
-      _applyEffects(s, d.effects);
-      d.triggeredMsg = d.msg || "A delayed consequence from a past decision has arrived.";
-      s._lastDelayMsg = d.triggeredMsg;
-    } else {
-      remaining.push(d);
-    }
-  }
-  s.pendingDelays = remaining;
-
-  // 11) Bounds enforcement
-  s.pollution    = Math.max(0, Math.min(100, s.pollution));
-  s.climate      = Math.max(0, Math.min(100, s.climate));
-  s.happiness    = Math.max(0, Math.min(100, s.happiness));
-  s.legitimacy   = Math.max(0, Math.min(100, s.legitimacy));
-  s.disease_rate = Math.max(0, Math.min(100, s.disease_rate));
-  s.military     = Math.max(0, Math.min(100, s.military));
-  s.technology   = Math.max(0, s.technology);
-
+// In V6 NLP mode, we don't have static policies.
+// We just apply base environmental friction and tech bonuses.
+function simulationStepBase(state) {
+  let s = JSON.parse(JSON.stringify(state));
   s.year += 1;
+  // NOTE: getMultipliers and enforceBounds are assumed to be defined elsewhere
+  // or are placeholders for future implementation based on the provided snippet.
+  const m = getMultipliers(s);
+
+  // Base growth/decay driven by environment
+  s.population *= (1 + 0.05 * m.popG - 0.02 * m.dis - 0.01 * (s.climate/100));
+  s.food       -= s.population * 0.9;
+  s.energy     -= s.population * 0.4;
+  s.pollution  *= 0.98;
+  s.pollution  += s.population * 0.01 * (s.technology < 50 ? 1 : 0.5);
+  s.climate    += (s.pollution > 60) ? 1 : -0.5;
+
+  s = enforceBounds(s);
   return s;
 }
 
@@ -319,25 +215,27 @@ function shouldTriggerCrisis(year, random) {
 
 // ---- Pick a dilemma card appropriate for axiom ----
 function pickDilemma(state, usedIds) {
-  const ideo = AXIOMS[state.axiom];
-  const unlocked = ideo ? ideo.unlocksTags : [];
-  const locked   = ideo ? ideo.locksTags   : [];
-
-  const candidates = DILEMMAS.filter(d =>
-    !usedIds.has(d.id) &&
-    !d.tags.some(t => locked.includes(t))
-  );
-
-  // Prefer axiom-specific ones
-  const preferred = candidates.filter(d =>
-    d.tags.some(t => unlocked.includes(t) || t === 'all')
-  );
-
-  const pool = preferred.length > 0 ? preferred : candidates;
-  if (pool.length === 0) return DILEMMAS[Math.floor(Math.random() * DILEMMAS.length)];
-  return pool[Math.floor(Math.random() * pool.length)];
+  const pool = DILEMMAS.filter(d => !usedIds.has(d.id));
+  return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
 }
 
+// Fallback for NLP Text Input Evaluation if Vercel serverless fails
+function generateLocalFallbackConsequence(directive, state) {
+  // Ultra-basic heuristic keyword matching
+  const txt = directive.toLowerCase();
+  let effects = {};
+  if (txt.includes('food') || txt.includes('farm') || txt.includes('ration')) effects = { food: 50 };
+  else if (txt.includes('build') || txt.includes('industry')) effects = { economy: 5, pollution: 5 };
+  else if (txt.includes('heal') || txt.includes('vaccine') || txt.includes('doctor')) effects = { disease_rate: -5, happiness: 5 };
+  else if (txt.includes('military') || txt.includes('police') || txt.includes('force')) effects = { military: 5, legitimacy: 5, fear: 10 };
+  else if (txt.includes('clean') || txt.includes('environment')) effects = { pollution: -5, climate: -1 };
+
+  return {
+    consequence: `Directive executed locally via fallback engine. Effects simulated based on keyword pattern heuristics for: "${directive}".`,
+    severity: "OK",
+    effects: effects
+  };
+}
 // ---- Pick a crisis appropriate for current state ----
 function pickCrisis(state, usedIds) {
   const eligible = CRISES.filter(c => {

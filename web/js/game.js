@@ -126,7 +126,7 @@ function renderAll() {
     s.traits.map(t => `<span class="trait-badge">${t}</span>`).join('');
 
   renderSidebar(s);
-  renderPolicyButtons();
+  setupNLPTerminal();
   renderMetrics(s);
   renderAlerts(s);
   renderTechTree(s);
@@ -272,57 +272,56 @@ function buildEffectTags(s, prevState) {
 }
 
 // ==================================================
-// POLICY BUTTONS (rendered in main/choice area)
+// POLICY BUTTONS (Removed for V6 NLP Input)
 // ==================================================
-function renderPolicyButtons() {
-  const container = document.getElementById('policy-btns');
-  if (!container) return;
-  container.innerHTML = '';
-  for (const [key, p] of Object.entries(POLICIES)) {
-    const btn = document.createElement('button');
-    btn.className = 'policy-btn';
-    btn.disabled  = G.advancing;
-    btn.innerHTML = `<span class="p-icon">${p.name.split(' ')[0]}</span>
-      <span class="p-name">${p.name.split(' ').slice(1).join(' ')}</span>
-      <span class="p-desc">${p.desc}</span>`;
-    btn.addEventListener('click', () => advanceYear(key));
-    container.appendChild(btn);
-  }
+function setupNLPTerminal() {
+  const btn = document.getElementById('nlp-submit-btn');
+  const inp = document.getElementById('nlp-input');
+  if (!btn || !inp) return;
+  
+  const submitAction = () => {
+    const text = inp.value.trim();
+    if (!text) return;
+    advanceYearText(text);
+    inp.value = '';
+  };
 
-  // Update divider text
-  const hdrTxt = document.getElementById('choice-hdr-txt');
-  if (hdrTxt) hdrTxt.textContent = G.advancing
-    ? '◈ PROCESSING DIRECTIVE... ◈'
-    : '◈ SELECT ANNUAL DIRECTIVE ◈';
+  btn.addEventListener('click', submitAction);
+  inp.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') submitAction();
+  });
 }
 
 // ==================================================
-// ADVANCE YEAR (called directly by policy button click)
+// ADVANCE YEAR (NLP TEXT EVALUATION)
 // ==================================================
-async function advanceYear(policyKey) {
+async function advanceYearText(directiveText) {
   if (G.advancing) return;
   G.advancing = true;
-  renderPolicyButtons(); // disable buttons  
+  
+  const inp = document.getElementById('nlp-input');
+  const btn = document.getElementById('nlp-submit-btn');
+  if (inp && btn) { inp.disabled = true; btn.disabled = true; }
+  
+  // Update divider text
+  const hdrTxt = document.getElementById('choice-hdr-txt');
+  if (hdrTxt) hdrTxt.textContent = 'AUTHORIZING PARSER...';
 
   const prevState = JSON.parse(JSON.stringify(G.state));
 
-  // Record emotion
-  const now = Date.now();
-  if (G.lastAdvanceMs) G.emotionTracker?.recordAdvance(policyKey, now - G.lastAdvanceMs);
-  G.lastAdvanceMs = now;
-
   // Immediate news flash: show processing
-  const policyName = POLICIES[policyKey]?.name || policyKey;
   setNewsFlash(
-    `>> DIRECTIVE RECEIVED`,
+    `>> DIRECTIVE TRANSMITTED`,
     null,
-    `${policyName} — policy enacted for Year ${G.state.year}.\n\nProcessing civilization systems...`,
+    `>>> ${directiveText}\n\nCalculating civilization reaction...`,
     []
   );
-  await delay(400);
+  await delay(800);
 
-  // Simulate
-  G.state = simulationStep(G.state, policyKey);
+  // V6 Engine Base Step
+  // In V6, without a specific 'policyKey' from the old 6 buttons, 
+  // we step base decay, then apply the LLM response on top.
+  G.state = simulationStepBase(G.state);
   const s = G.state;
 
   // DDA bonus
@@ -339,29 +338,27 @@ async function advanceYear(policyKey) {
     addTimeline(s.year, civEvent.event.slice(0, 80));
   }
 
-  // Attempt to generate event via Gemini API (Serverless), fallback to local AI Director biased event
+  // Generate Consequence via Gemini Evaluator
   let ev;
   try {
+    if (hdrTxt) hdrTxt.textContent = 'LLM INFERENCE...';
     const API_URL = window.CIV_API_URL || 'http://localhost:8000';
-    const res = await fetch(`${API_URL}/api/event`, {
+    const res = await fetch(`${API_URL}/api/evaluate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ state: G.state }),
-      signal: AbortSignal.timeout(4000)
+      body: JSON.stringify({ state: G.state, directive: directiveText }),
+      signal: AbortSignal.timeout(6000)
     });
     if (!res.ok) throw new Error('API failed');
     ev = await res.json();
-    if (!ev.event || !ev.severity) throw new Error('Malformed AI response');
+    if (!ev.consequence || !ev.effects) throw new Error('Malformed AI response');
   } catch (err) {
     console.warn("Gemini API fallback to local heuristics:", err);
-    ev = generateLocalEvent(G.state);
+    ev = generateLocalFallbackConsequence(directiveText, G.state);
   }
 
-  const finalEv = G.director?.eventBias() === 'HIGH' && ev.severity === 'MODERATE'
-    ? { ...ev, severity: 'HIGH' } : ev;
-  
   const preApplyState = JSON.parse(JSON.stringify(G.state));
-  G.state = applyEvent(G.state, finalEv.effects || {});
+  G.state = applyEvent(G.state, ev.effects || {});
 
   // Delayed consequence message
   let delayMsg = '';
@@ -376,15 +373,15 @@ async function advanceYear(policyKey) {
 
   // Show typewriter news flash
   await typeNewsFlash(
-    `>> YEAR ${s.year} — TRANSMISSION`,
-    finalEv.severity,
-    finalEv.event.length > 60 ? finalEv.event.slice(0, 60) + '…' : finalEv.event,
-    finalEv.event + civMsg + delMsg + decadeMsg,
+    `>> YEAR ${s.year} — ACTION REPORT`,
+    ev.severity || 'OK',
+    ev.consequence.length > 60 ? ev.consequence.slice(0, 60) + '…' : ev.consequence,
+    ev.consequence + civMsg + delMsg + decadeMsg,
     buildEffectTags(G.state, preApplyState)
   );
 
   // Timeline
-  addTimeline(s.year, finalEv.event.slice(0, 80));
+  addTimeline(s.year, ev.consequence.slice(0, 80));
 
   // Tech Discovery
   const disc = checkTechDiscovery(G.state, G.triggeredDiscoveries);
@@ -409,7 +406,7 @@ async function advanceYear(policyKey) {
   renderTechTree(G.state);
   renderWorldStage();
   renderStrategyProfile(G.state);
-  updateChart(G.state);
+  setupNLPTerminal();
   // Header
   document.getElementById('hdr-year').textContent = `YEAR ${G.state.year}`;
   document.getElementById('hdr-score').textContent = `SCORE: ${calcScore(G.state)}/100`;
@@ -458,9 +455,12 @@ async function advanceYear(policyKey) {
   // Check endings
   const ending = checkEnding(G.state);
   if (ending) { showEnding(ending); return; }
+  // Check win
+  if (s.year >= 100) { showEndingScreen('VICTORY'); return; }
 
   G.advancing = false;
-  renderPolicyButtons(); // re-enable
+  if (inp && btn) { inp.disabled = false; btn.disabled = false; inp.focus(); }
+  if (hdrTxt) hdrTxt.textContent = 'AUTHORIZE DIRECTIVE';
 }
 
 // ==================================================

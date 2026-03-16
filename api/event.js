@@ -39,11 +39,11 @@ Disease Rate: ${state.disease_rate.toFixed(1)}/100
 Military Power: ${state.military.toFixed(1)}/100
 Climate Damage: ${state.climate.toFixed(1)}/100
 
-Generate ONE realistic global event taking these EXACT metrics into consideration. Focus on the most extreme or alarming variables (e.g. high pollution, low happiness, incredible economy).
+Generate ONE severe CRISIS DILEMMA taking these EXACT metrics into consideration. Focus on the most extreme or alarming variables (e.g., if pollution is high, generate an ecological collapse dilemma; if economy is low, generate a strike). 
 
 Return ONLY a valid JSON object matching this schema exactly:
 {
-  "event": "<A vivid, immersive 2-sentence news brief describing the event>",
+  "event": "<A vivid, immersive 2-sentence aerospace-themed Crisis Dilemma. State the threat exactly as an AI terminal would. End with 'Awaiting Directive.'.>",
   "severity": "<minor|moderate|major|catastrophic>",
   "effects": {
     "food": <number positive or negative modifier>,
