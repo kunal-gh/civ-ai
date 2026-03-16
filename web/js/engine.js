@@ -73,25 +73,73 @@ class WorldState {
   }
 }
 
-// ---- Main simulation step ----
-// In V6 NLP mode, we don't have static policies.
-// We just apply base environmental friction and tech bonuses.
+// ---- Main simulation step (NLP Mode - no static policy key) ----
 function simulationStepBase(state) {
-  let s = JSON.parse(JSON.stringify(state));
+  const s = state.clone();
+  s.snap();
   s.year += 1;
-  // NOTE: getMultipliers and enforceBounds are assumed to be defined elsewhere
-  // or are placeholders for future implementation based on the provided snippet.
-  const m = getMultipliers(s);
 
-  // Base growth/decay driven by environment
-  s.population *= (1 + 0.05 * m.popG - 0.02 * m.dis - 0.01 * (s.climate/100));
-  s.food       -= s.population * 0.9;
-  s.energy     -= s.population * 0.4;
-  s.pollution  *= 0.98;
-  s.pollution  += s.population * 0.01 * (s.technology < 50 ? 1 : 0.5);
-  s.climate    += (s.pollution > 60) ? 1 : -0.5;
+  // 1) Technology multipliers
+  if (s.technology > 50) {
+    s.food    *= 1 + 0.001 * (s.technology - 50);
+    s.economy += 0.5 * (s.technology - 50) / 50;
+  }
+  if (s.technology > 100) s.pollution = Math.max(0, s.pollution - 0.002 * (s.technology - 100));
+  if (s.technology > 200) s.disease_rate = Math.max(0, s.disease_rate - 0.001 * (s.technology - 200));
 
-  s = enforceBounds(s);
+  // 2) Population dynamics
+  const fpc = s.food / Math.max(s.population, 1);
+  const birth_rate = 0.022 * Math.min(fpc * 2, 1.5);
+  const base_death = 0.010 + 0.004 * (s.pollution / 100);
+  const dis_death  = 0.005 * (s.disease_rate / 100);
+  const starv_pen  = fpc < 0.5 ? 0.05 * (0.5 - fpc) : 0;
+  const climate_pen = 0.003 * Math.max(0, s.climate - 40) / 60;
+  const death_rate = Math.max(0, base_death + dis_death + starv_pen + climate_pen);
+  s.population = Math.max(0, Math.round(s.population * (1 + birth_rate - death_rate)));
+
+  // 3) Resource consumption
+  s.food   = Math.max(0, s.food   - s.population * 0.12);
+  s.energy = Math.max(0, s.energy * 0.97);
+
+  // 4) System interactions
+  s.climate = Math.min(100, s.climate + s.pollution * 0.02 - 0.2);
+  if (s.climate > 50) s.food *= 1 - (s.climate - 50) * 0.004;
+  s.disease_rate = Math.min(100, s.disease_rate + (s.population/5_000_000)*0.5 + s.pollution*0.03 - s.technology*0.02);
+  s.military     = Math.max(0, s.military - 1.5);
+  s.water        = Math.max(0, s.water - 0.8);
+  if (s.water < 30) s.food *= 0.97;
+
+  // 5) Public opinion
+  s.trust  = Math.max(0, Math.min(100, s.legitimacy * 0.6 + s.happiness * 0.4));
+  s.fear   = Math.max(0, Math.min(100, s.disease_rate * 0.5 + s.climate * 0.3 + (s.military < 20 ? 20 : 0)));
+  s.anger  = Math.max(0, Math.min(100, 100 - s.happiness * 0.5 - s.legitimacy * 0.5));
+  s.hope   = Math.max(0, Math.min(100, s.technology * 0.2 + s.economy * 0.5 + s.happiness * 0.3));
+
+  // 6) Legitimacy
+  if (s.happiness < 40) s.legitimacy -= 2;
+  if (s.happiness > 70) s.legitimacy += 1;
+  if (s.economy < 10)   s.legitimacy -= 3;
+  if (s.anger > 70)     s.legitimacy -= 3;
+  s.economy = Math.max(0, s.economy * (1 + 0.01 - s.pollution * 0.0002));
+
+  // 7) Process delayed consequences
+  const remaining = [];
+  for (const d of s.pendingDelays) {
+    if (s.year >= d.triggerYear) {
+      _applyEffects(s, d.effects);
+      s._lastDelayMsg = d.msg || 'A delayed consequence has arrived.';
+    } else { remaining.push(d); }
+  }
+  s.pendingDelays = remaining;
+
+  // 8) Bounds
+  s.pollution    = Math.max(0, Math.min(100, s.pollution));
+  s.climate      = Math.max(0, Math.min(100, s.climate));
+  s.happiness    = Math.max(0, Math.min(100, s.happiness));
+  s.legitimacy   = Math.max(0, Math.min(100, s.legitimacy));
+  s.disease_rate = Math.max(0, Math.min(100, s.disease_rate));
+  s.military     = Math.max(0, Math.min(100, s.military));
+  s.technology   = Math.max(0, s.technology);
   return s;
 }
 

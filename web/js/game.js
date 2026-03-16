@@ -272,24 +272,24 @@ function buildEffectTags(s, prevState) {
 }
 
 // ==================================================
-// POLICY BUTTONS (Removed for V6 NLP Input)
+// NLP TERMINAL SETUP (idempotent via onclick)
 // ==================================================
 function setupNLPTerminal() {
   const btn = document.getElementById('nlp-submit-btn');
   const inp = document.getElementById('nlp-input');
   if (!btn || !inp) return;
-  
+  if (btn.dataset.nlpBound) return; // already set up
+  btn.dataset.nlpBound = '1';
+
   const submitAction = () => {
     const text = inp.value.trim();
-    if (!text) return;
-    advanceYearText(text);
+    if (!text || G.advancing) return;
     inp.value = '';
+    advanceYearText(text);
   };
 
-  btn.addEventListener('click', submitAction);
-  inp.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') submitAction();
-  });
+  btn.onclick = submitAction;
+  inp.onkeypress = (e) => { if (e.key === 'Enter') submitAction(); };
 }
 
 // ==================================================
@@ -298,175 +298,197 @@ function setupNLPTerminal() {
 async function advanceYearText(directiveText) {
   if (G.advancing) return;
   G.advancing = true;
-  
+
   const inp = document.getElementById('nlp-input');
   const btn = document.getElementById('nlp-submit-btn');
-  if (inp && btn) { inp.disabled = true; btn.disabled = true; }
-  
-  // Update divider text
   const hdrTxt = document.getElementById('choice-hdr-txt');
-  if (hdrTxt) hdrTxt.textContent = 'AUTHORIZING PARSER...';
 
-  const prevState = JSON.parse(JSON.stringify(G.state));
+  const unlock = () => {
+    G.advancing = false;
+    if (inp) { inp.disabled = false; inp.focus(); }
+    if (btn) btn.disabled = false;
+    if (hdrTxt) hdrTxt.textContent = 'AUTHORIZE DIRECTIVE';
+  };
 
-  // Immediate news flash: show processing
-  setNewsFlash(
-    `>> DIRECTIVE TRANSMITTED`,
-    null,
-    `>>> ${directiveText}\n\nCalculating civilization reaction...`,
-    []
-  );
-  await delay(800);
-
-  // V6 Engine Base Step
-  // In V6, without a specific 'policyKey' from the old 6 buttons, 
-  // we step base decay, then apply the LLM response on top.
-  G.state = simulationStepBase(G.state);
-  const s = G.state;
-
-  // DDA bonus
-  const score = calcScore(s);
-  G.playerScoreHistory.push(score);
-  const bonus = G.director?.resourceBonus(score) ?? 1;
-  if (bonus > 1) { G.state.food *= bonus; G.state.energy *= bonus; }
-
-  // Step rival civs + check for global event
-  G.competingCivs = G.competingCivs.map(civ => stepCompetingCiv(civ));
-  const civEvent = civGlobalEffect(G.competingCivs, G.state);
-  if (civEvent) {
-    G.state = applyEvent(G.state, civEvent.effects || {});
-    addTimeline(s.year, civEvent.event.slice(0, 80));
-  }
-
-  // Generate Consequence via Gemini Evaluator
-  let ev;
   try {
-    if (hdrTxt) hdrTxt.textContent = 'LLM INFERENCE...';
-    const API_URL = window.CIV_API_URL || 'http://localhost:8000';
-    const res = await fetch(`${API_URL}/api/evaluate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ state: G.state, directive: directiveText }),
-      signal: AbortSignal.timeout(6000)
-    });
-    if (!res.ok) throw new Error('API failed');
-    ev = await res.json();
-    if (!ev.consequence || !ev.effects) throw new Error('Malformed AI response');
-  } catch (err) {
-    console.warn("Gemini API fallback to local heuristics:", err);
-    ev = generateLocalFallbackConsequence(directiveText, G.state);
-  }
+    if (inp && btn) { inp.disabled = true; btn.disabled = true; }
+    if (hdrTxt) hdrTxt.textContent = 'PROCESSING...';
 
-  const preApplyState = JSON.parse(JSON.stringify(G.state));
-  G.state = applyEvent(G.state, ev.effects || {});
+    const prevState = JSON.parse(JSON.stringify(G.state));
 
-  // Delayed consequence message
-  let delayMsg = '';
-  if (s._lastDelayMsg) { delayMsg = s._lastDelayMsg; delete s._lastDelayMsg; }
-
-  // Build combined body text
-  const civMsg = civEvent ? `\n\n🌐 WORLD STAGE:\n${civEvent.event}` : '';
-  const delMsg = delayMsg ? `\n\n⏰ DELAYED EFFECT:\n${delayMsg}` : '';
-  const decadeMsg = s.year % 10 === 0
-    ? `\n\n📊 DECADE REPORT — Year ${s.year}: Score ${score}/100 · Strategy: ${STRATEGY_TYPES[G.playerStrategy]?.label || 'Balanced'}`
-    : '';
-
-  // Show typewriter news flash
-  await typeNewsFlash(
-    `>> YEAR ${s.year} — ACTION REPORT`,
-    ev.severity || 'OK',
-    ev.consequence.length > 60 ? ev.consequence.slice(0, 60) + '…' : ev.consequence,
-    ev.consequence + civMsg + delMsg + decadeMsg,
-    buildEffectTags(G.state, preApplyState)
-  );
-
-  // Timeline
-  addTimeline(s.year, ev.consequence.slice(0, 80));
-
-  // Tech Discovery
-  const disc = checkTechDiscovery(G.state, G.triggeredDiscoveries);
-  if (disc) {
-    G.triggeredDiscoveries.add(disc.id);
-    G.state = applyEvent(G.state, disc.effects);
-    if (disc.flag) G.state.flags[disc.flag] = true;
-    showTechDiscovery(disc);
-    addTimeline(s.year, `✨ BREAKTHROUGH: ${disc.label}`);
-  }
-
-  // Update AI Director
-  G.director?.update(score, !!civEvent);
-
-  // ML predictions (background, no await)
-  fetchMLPredictions(G.state);
-
-  // Update sidebar + tabs (sans command tab which has the news flash)
-  renderSidebar(G.state);
-  renderMetrics(G.state);
-  renderAlerts(G.state);
-  renderTechTree(G.state);
-  renderWorldStage();
-  renderStrategyProfile(G.state);
-  setupNLPTerminal();
-  // Header
-  document.getElementById('hdr-year').textContent = `YEAR ${G.state.year}`;
-  document.getElementById('hdr-score').textContent = `SCORE: ${calcScore(G.state)}/100`;
-  document.getElementById('hdr-traits').innerHTML =
-    G.state.traits.map(t => `<span class="trait-badge">${t}</span>`).join('');
-
-  // Dilemma every 5 years
-  if (G.state.year % 5 === 0) {
-    const dilemma = pickDilemma(G.state, G.usedDilemmas);
-    if (dilemma) {
-      G.usedDilemmas.add(dilemma.id);
-      await showModal(dilemma, 'DILEMMA', G.state.year);
-    }
-  }
-  // Crisis (director-adjusted probability)
-  else if (G.state.year > 8 && G.state.year % 9 === 0 &&
-           Math.random() < (G.director?.crisisChance(G.state.year) ?? 0.6)) {
-    const pool = strategyAdaptedCrisisWeights(G.playerStrategy, CRISES)
-      .filter(c => !G.usedCrises.has(c.id));
-    if (pool.length > 0) {
-      const crisis = pool[Math.floor(Math.random() * pool.length)];
-      G.usedCrises.add(crisis.id);
-      G.state = applyEvent(G.state, crisis.effects || {});
-      await showModal(crisis, 'CRISIS', G.state.year);
-    }
-  }
-
-  // Revolution check
-  if (isRevolution(G.state)) {
-    G.state.legitimacy = Math.max(25, G.state.legitimacy * 0.5);
-    G.state.economy *= 0.65; G.state.military *= 0.6;
-    addTimeline(G.state.year, '🔥 REVOLUTION — Government collapsed.');
-    await typeNewsFlash(
-      `>> YEAR ${G.state.year} — ALERT`,
-      'CATASTROPHIC', 'REVOLUTION OUTBREAK',
-      'The people have risen. The government has collapsed.\nAll economic and military progress has been reversed.\nLegitimacy halved. Emergency protocols engaged.', []
+    setNewsFlash(
+      `>> DIRECTIVE TRANSMITTED`,
+      null,
+      `>>> ${directiveText}\n\nCalculating consequences...`,
+      []
     );
+    await delay(600);
+
+    // Simulate base year step
+    G.state = simulationStepBase(G.state);
+    const s = G.state;
+
+    // DDA bonus
+    const score = calcScore(s);
+    G.playerScoreHistory.push(score);
+    const bonus = G.director?.resourceBonus(score) ?? 1;
+    if (bonus > 1) { G.state.food *= bonus; G.state.energy *= bonus; }
+
+    // Rival civs
+    G.competingCivs = G.competingCivs.map(civ => stepCompetingCiv(civ));
+    const civEvent = civGlobalEffect(G.competingCivs, G.state);
+    if (civEvent) {
+      G.state = applyEvent(G.state, civEvent.effects || {});
+      addTimeline(s.year, civEvent.event.slice(0, 80));
+    }
+
+    // Evaluate directive via LLM (fallback to local heuristics)
+    if (hdrTxt) hdrTxt.textContent = 'LLM INFERENCE...';
+    let ev;
+    try {
+      const API_URL = window.CIV_API_URL || '';
+      const res = await fetch(`${API_URL}/api/evaluate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ state: {
+          population: G.state.population, food: G.state.food,
+          technology: G.state.technology, pollution: G.state.pollution,
+          economy: G.state.economy, happiness: G.state.happiness,
+          legitimacy: G.state.legitimacy, disease_rate: G.state.disease_rate,
+          military: G.state.military, climate: G.state.climate
+        }, directive: directiveText }),
+        signal: AbortSignal.timeout(7000)
+      });
+      if (!res.ok) throw new Error('API ' + res.status);
+      ev = await res.json();
+      if (!ev.consequence || !ev.effects) throw new Error('Bad response');
+    } catch (apiErr) {
+      console.warn('Fallback:', apiErr.message);
+      ev = generateLocalFallbackConsequence(directiveText, G.state);
+    }
+
+    const preApplyState = JSON.parse(JSON.stringify(G.state));
+    G.state = applyEvent(G.state, ev.effects || {});
+
+    const delayMsg = s._lastDelayMsg || '';
+    const civMsg = civEvent ? `\n\n🌐 WORLD STAGE: ${civEvent.event}` : '';
+    const delMsg = delayMsg ? `\n\n⏰ DELAYED EFFECT: ${delayMsg}` : '';
+    const decadeMsg = s.year % 10 === 0
+      ? `\n\n— DECADE ${s.year}: Score ${score}/100`
+      : '';
+
+    await typeNewsFlash(
+      `>> YEAR ${s.year} — ACTION REPORT`,
+      ev.severity || 'OK',
+      ev.consequence.length > 60 ? ev.consequence.slice(0, 60) + '…' : ev.consequence,
+      ev.consequence + civMsg + delMsg + decadeMsg,
+      buildEffectTags(G.state, preApplyState)
+    );
+
+    // Show popup toast if there is a crisis event
+    if (ev.severity === 'WARNING' || ev.severity === 'CRITICAL') {
+      showEventToast(ev.consequence.slice(0, 100), ev.severity);
+    }
+
+    addTimeline(s.year, ev.consequence.slice(0, 80));
+
+    // Tech discovery
+    const disc = checkTechDiscovery(G.state, G.triggeredDiscoveries);
+    if (disc) {
+      G.triggeredDiscoveries.add(disc.id);
+      G.state = applyEvent(G.state, disc.effects);
+      if (disc.flag) G.state.flags[disc.flag] = true;
+      showTechDiscovery(disc);
+      addTimeline(s.year, `✨ BREAKTHROUGH: ${disc.label}`);
+    }
+
+    G.director?.update(score, !!civEvent);
+    fetchMLPredictions(G.state);
+
+    renderSidebar(G.state);
+    renderMetrics(G.state);
+    renderAlerts(G.state);
+    renderTechTree(G.state);
+    renderWorldStage();
+    renderStrategyProfile(G.state);
+    updateChart(G.state);
+    document.getElementById('hdr-year').textContent = `YEAR ${G.state.year}`;
+    document.getElementById('hdr-score').textContent = `SCORE: ${calcScore(G.state)}/100`;
+    document.getElementById('hdr-traits').innerHTML =
+      G.state.traits.map(t => `<span class="trait-badge">${t}</span>`).join('');
+
+    // Dilemma every 5 years
+    if (G.state.year % 5 === 0) {
+      const dilemma = pickDilemma(G.state, G.usedDilemmas);
+      if (dilemma) { G.usedDilemmas.add(dilemma.id); await showModal(dilemma, 'DILEMMA', G.state.year); }
+    }
+    // Crisis every ~9 years
+    else if (G.state.year > 8 && G.state.year % 9 === 0 &&
+             Math.random() < (G.director?.crisisChance(G.state.year) ?? 0.6)) {
+      const pool = strategyAdaptedCrisisWeights(G.playerStrategy, CRISES).filter(c => !G.usedCrises.has(c.id));
+      if (pool.length > 0) {
+        const crisis = pool[Math.floor(Math.random() * pool.length)];
+        G.usedCrises.add(crisis.id);
+        G.state = applyEvent(G.state, crisis.effects || {});
+        await showModal(crisis, 'CRISIS', G.state.year);
+      }
+    }
+
+    // Revolution check
+    if (isRevolution(G.state)) {
+      G.state.legitimacy = Math.max(25, G.state.legitimacy * 0.5);
+      G.state.economy *= 0.65; G.state.military *= 0.6;
+      addTimeline(G.state.year, '🔥 REVOLUTION — Government collapsed.');
+      showEventToast('The people have risen. The government has collapsed.', 'CRITICAL');
+      await typeNewsFlash(`>> YEAR ${G.state.year} — ALERT`, 'CATASTROPHIC', 'REVOLUTION OUTBREAK',
+        'The people have risen. Government collapsed. All progress reversed.', []);
+    }
+
+    // Check endings
+    const ending = checkEnding(G.state);
+    if (ending) { showEnding(ending); return; }
+    if (s.year >= 100) { showEndingScreen('VICTORY'); return; }
+
+  } catch (err) {
+    console.error('advanceYearText error:', err);
+    setNewsFlash('>> ERROR', null, 'An error occurred. Try again.', []);
+  } finally {
+    unlock();
   }
-
-  // Decade timeline log
-  if (G.state.year % 10 === 0) {
-    G.director?.update(score, false);
-    G.playerStrategy = detectPlayerStrategy(G.state.policyHistory);
-  }
-
-  // Check endings
-  const ending = checkEnding(G.state);
-  if (ending) { showEnding(ending); return; }
-  // Check win
-  if (s.year >= 100) { showEndingScreen('VICTORY'); return; }
-
-  G.advancing = false;
-  if (inp && btn) { inp.disabled = false; btn.disabled = false; inp.focus(); }
-  if (hdrTxt) hdrTxt.textContent = 'AUTHORIZE DIRECTIVE';
 }
+
 
 // ==================================================
 // UI HELPERS
 // ==================================================
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Event Toast Popup ──
+function showEventToast(message, severity) {
+  let toast = document.getElementById('event-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'event-toast';
+    document.body.appendChild(toast);
+  }
+  const colors = { 'CRITICAL': '#ff4d4d', 'WARNING': '#e5c07b', 'OK': '#4dd2ff' };
+  const icons  = { 'CRITICAL': '🚨', 'WARNING': '⚠', 'OK': '●' };
+  toast.style.cssText = `
+    position:fixed; top:80px; right:20px; z-index:9999;
+    background:#060a16; border:1px solid ${colors[severity]||'#334155'};
+    border-left:3px solid ${colors[severity]||'#4dd2ff'};
+    color:#e2e8f0; padding:14px 18px; max-width:320px;
+    font-family:'Jura',sans-serif; font-size:.9rem; line-height:1.5;
+    border-radius:2px; box-shadow: 0 8px 32px rgba(0,0,0,.6);
+    opacity:1; transition:opacity .4s ease;
+  `;
+  toast.innerHTML = `
+    <div style="font-size:.75rem;letter-spacing:2px;color:${colors[severity]||'#4dd2ff'};margin-bottom:6px;text-transform:uppercase;font-weight:700;">${icons[severity]||'●'} ${severity||'EVENT'}</div>
+    <div>${message}</div>
+  `;
+  clearTimeout(toast._timeout);
+  toast._timeout = setTimeout(() => { toast.style.opacity='0'; setTimeout(()=>toast.remove(),400); }, 5000);
+}
 
 function showTechDiscovery(disc) {
   const panel = document.getElementById('tech-discovery-panel');
