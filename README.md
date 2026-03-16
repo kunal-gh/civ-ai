@@ -1,4 +1,4 @@
-# CIV-AI 🌍 — Machine Learning–Driven Civilization Simulator
+# AXIOM 🌍 — Machine Learning–Driven Civilization Simulator
 
 > **A research-grade AI engineering system** that combines supervised machine learning, generative AI, explainable AI, and a live interactive simulation dashboard — demonstrating a complete, end-to-end ML engineering pipeline on commodity hardware.
 
@@ -11,9 +11,9 @@
 
 ---
 
-## What Is CIV-AI?
+## What Is AXIOM?
 
-CIV-AI is a year-by-year civilization simulator where every decision matters. Each annual cycle, the player selects a governing policy, and three distinct AI subsystems respond:
+AXIOM is a year-by-year civilization simulator where every decision matters. Each annual cycle, the player selects a governing policy, and three distinct AI subsystems respond:
 
 1. **A trained Random Forest regressor** forecasts next year's population change and explains which variables drive that prediction
 2. **Google Gemini 2.0 Flash** generates a contextually relevant world event — drought, pandemic, trade boom — conditioned on the exact current state
@@ -22,10 +22,10 @@ CIV-AI is a year-by-year civilization simulator where every decision matters. Ea
 The goal: keep your civilization alive and thriving across 100 simulated years.
 
 ### Live V2 Dashboard & Analytics
-![CIV-AI V2 Dashboard](docs/images/dashboard_v2.png)
+![AXIOM V2 Dashboard](docs/images/dashboard_v2.png)
 *The V2 Streamlit dashboard tracks 11 variables with dynamic Plague Inc-style delta indicators and Boss Scenario alerts.*
 
-![CIV-AI Dynamic Analytics](docs/images/analytics_chart.png)
+![AXIOM Dynamic Analytics](docs/images/analytics_chart.png)
 *Custom Matplotlib dual-axis tracking of Population vs normalized Disease, Climate, and Legitimacy indexes.*
 
 ---
@@ -256,7 +256,7 @@ def generate_event(state: WorldState) -> dict:
 
 ## Legitimacy & Revolution System (Novel Feature)
 
-Standard civilization sims track only resources. CIV-AI adds an institutional trust layer:
+Standard civilization sims track only resources. AXIOM adds an institutional trust layer:
 
 ```python
 # Each year:
@@ -371,7 +371,7 @@ python -m streamlit run ui/app.py
 ### Expected Training Output
 ```
 =======================================================
-  CIV-AI Training Pipeline
+  AXIOM Training Pipeline
 =======================================================
 [1/3] Generating synthetic dataset (5,000 episodes)...
   1000/5000 episodes generated

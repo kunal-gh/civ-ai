@@ -1,5 +1,5 @@
 // ============================================================
-// adaptive.js — CIV-AI v3 ML-Adaptive Systems
+// adaptive.js — AXIOM v3 ML-Adaptive Systems
 // Implements: AI Director, DDA, Strategy Detection, Collapse Risk,
 //             Player Embedding, Technology Discovery, Competing Civs
 // ============================================================
@@ -226,7 +226,7 @@ const CIV_PRESETS = [
   {
     name: 'Republic of Nova',
     icon: '🏛️',
-    ideology: 'tech',
+    axiom: 'tech',
     color: '#00e5ff',
     state: { population: 2000000, technology: 35, economy: 55, military: 40, climate: 22, legitimacy: 78, food: 800000, pollution: 20, disease_rate: 6, happiness: 70 },
     policy: 'education',
@@ -234,7 +234,7 @@ const CIV_PRESETS = [
   {
     name: 'Imperium Draconis',
     icon: '⚔️',
-    ideology: 'military',
+    axiom: 'military',
     color: '#ff1744',
     state: { population: 3000000, technology: 18, economy: 62, military: 75, climate: 30, legitimacy: 55, food: 1200000, pollution: 35, disease_rate: 12, happiness: 45 },
     policy: 'military_buildup',

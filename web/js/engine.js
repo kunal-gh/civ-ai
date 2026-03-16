@@ -1,5 +1,5 @@
 // ============================================================
-// engine.js — CIV-AI v3 Game Engine
+// engine.js — AXIOM v3 Game Engine
 // Simple rules → interacting systems → emergent gameplay
 // ============================================================
 
@@ -25,8 +25,8 @@ class WorldState {
     this.fear         = overrides.fear         ?? 20;
     this.anger        = overrides.anger        ?? 25;
     this.hope         = overrides.hope         ?? 60;
-    // Ideology and traits
-    this.ideology     = overrides.ideology     ?? null;
+    // Axiom and traits
+    this.axiom     = overrides.axiom     ?? null;
     this.traits       = overrides.traits       ?? [];        // personality traits acquired
     this.policyHistory = overrides.policyHistory ?? {};     // policy → count used
     // Tech tree progress
@@ -78,7 +78,7 @@ function simulationStep(state, policy) {
   const s = state.clone();
   s.snap();
 
-  // 1) Apply ideology bonuses (first year only)
+  // 1) Apply axiom bonuses (first year only)
   // (applied once at init, not every step)
 
   // 2) Apply policy effects
@@ -269,11 +269,11 @@ function applyEvent(state, effects) {
   return s;
 }
 
-// ---- Apply ideology start bonuses ----
-function applyIdeology(state, ideologyKey) {
+// ---- Apply axiom start bonuses ----
+function applyAxiom(state, axiomKey) {
   const s = state.clone();
-  s.ideology = ideologyKey;
-  const ideo = IDEOLOGIES[ideologyKey];
+  s.axiom = axiomKey;
+  const ideo = AXIOMS[axiomKey];
   _applyEffects(s, ideo.startBonus);
   if (ideo.hiddenFlag) s.flags[ideo.hiddenFlag] = true;
   return s;
@@ -317,9 +317,9 @@ function shouldTriggerCrisis(year, random) {
   return year > 8 && year % 9 === 0 && random < 0.7;
 }
 
-// ---- Pick a dilemma card appropriate for ideology ----
+// ---- Pick a dilemma card appropriate for axiom ----
 function pickDilemma(state, usedIds) {
-  const ideo = IDEOLOGIES[state.ideology];
+  const ideo = AXIOMS[state.axiom];
   const unlocked = ideo ? ideo.unlocksTags : [];
   const locked   = ideo ? ideo.locksTags   : [];
 
@@ -328,7 +328,7 @@ function pickDilemma(state, usedIds) {
     !d.tags.some(t => locked.includes(t))
   );
 
-  // Prefer ideology-specific ones
+  // Prefer axiom-specific ones
   const preferred = candidates.filter(d =>
     d.tags.some(t => unlocked.includes(t) || t === 'all')
   );

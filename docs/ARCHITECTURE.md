@@ -1,4 +1,4 @@
-# CIV-AI: Architecture Deep-Dive
+# AXIOM: Architecture Deep-Dive
 
 ## Module Dependency Graph
 

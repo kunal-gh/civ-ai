@@ -1,5 +1,5 @@
 """
-app.py — CIV-AI Streamlit Dashboard v3
+app.py — AXIOM Streamlit Dashboard v3
 Adds: Multi-target ML predictions, LSTM 5-year forecast, Anomaly detection, PPO RL Advisor
 """
 
@@ -17,7 +17,7 @@ from src.ml_model import load_model, predict_and_explain, TARGET_LABELS
 # ---------------------------------------------------------------------------
 # Page config & CSS
 # ---------------------------------------------------------------------------
-st.set_page_config(page_title="CIV-AI v3", page_icon="🌍", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="AXIOM v3", page_icon="🌍", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
@@ -91,7 +91,7 @@ ws = WorldState.from_dict(st.session_state.state)
 # Sidebar
 # ---------------------------------------------------------------------------
 with st.sidebar:
-    st.markdown("## ⚙️ CIV-AI v3")
+    st.markdown("## ⚙️ AXIOM v3")
 
     if st.session_state.year % 8 == 0 and st.session_state.year > 1:
         st.session_state.boss_active = True
@@ -183,7 +183,7 @@ with st.sidebar:
 # ---------------------------------------------------------------------------
 # Main UI
 # ---------------------------------------------------------------------------
-st.markdown(f'<div class="main-title">🌍 CIV-AI v3 — Year {ws.year}</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="main-title">🌍 AXIOM v3 — Year {ws.year}</div>', unsafe_allow_html=True)
 
 if ws.is_collapsed():
     st.error("💀 **Civilization Collapse** — Society ceased to exist.")

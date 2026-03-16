@@ -1,9 +1,9 @@
 // ============================================================
-// data.js — CIV-AI v3 All Static Game Data
+// data.js — AXIOM v3 All Static Game Data
 // ============================================================
 
-// ------- IDEOLOGIES -------
-const IDEOLOGIES = {
+// ------- AXIOMS -------
+const AXIOMS = {
   technocracy: {
     name: "Technocracy",
     icon: "⚙️",

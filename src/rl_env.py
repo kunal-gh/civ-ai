@@ -1,7 +1,7 @@
 """
 rl_env.py
 ---------
-OpenAI Gymnasium environment wrapping the CIV-AI simulation engine.
+OpenAI Gymnasium environment wrapping the AXIOM simulation engine.
 Used to train a PPO agent from Stable-Baselines3 to act as an AI advisor.
 
 Observation space : Box(11,) — normalised WorldState variables
@@ -30,7 +30,7 @@ MAX_YEARS = 50
 
 class CivAIEnv(gym.Env):
     """
-    CIV-AI as a Gymnasium Reinforcement Learning environment.
+    AXIOM as a Gymnasium Reinforcement Learning environment.
 
     Episode: 50 simulated years from a random or fixed scenario.
     Goal: maximise population and legitimacy while minimising disease and climate.

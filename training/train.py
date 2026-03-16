@@ -1,7 +1,7 @@
 """
 train.py
 --------
-Master training pipeline for CIV-AI v3.
+Master training pipeline for AXIOM v3.
 
 Trains in sequence:
   1. Multi-output Random Forest  (fast — < 30s)
@@ -23,7 +23,7 @@ from src.ml_model import train, evaluate
 BANNER = "=" * 60
 
 def main():
-    print(f"\n{BANNER}\n  CIV-AI v3 Training Pipeline\n{BANNER}\n")
+    print(f"\n{BANNER}\n  AXIOM v3 Training Pipeline\n{BANNER}\n")
     os.makedirs("models", exist_ok=True)
     os.makedirs("data",   exist_ok=True)
 

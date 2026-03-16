@@ -46,7 +46,7 @@ body { animation: crt-flicker 9s infinite; }
 }
 .logo { font-family: var(--font-game); font-size: 2.4rem; color: var(--green); letter-spacing: 2px; text-shadow: var(--green-glow); line-height: 1; transform: translateY(2px); }
 .hdr-year { font-family: var(--font-vt); font-size: 2rem; color: var(--amber); letter-spacing: 2px; }
-.hdr-ideology { font-size: .85rem; padding: 3px 12px; border: 2px solid currentColor; border-radius: 2px; font-weight: bold; }
+.hdr-axiom { font-size: .85rem; padding: 3px 12px; border: 2px solid currentColor; border-radius: 2px; font-weight: bold; }
 .hdr-score { font-family: var(--font-vt); font-size: 1.8rem; color: var(--cyan); margin-left: auto; }
 #hdr-traits { display: flex; gap: 6px; flex-wrap: nowrap; }
 .trait-badge { font-size: .75rem; padding: 2px 9px; background: rgba(204,68,255,.1); border: 1px solid rgba(204,68,255,.3); color: var(--purple); border-radius: 2px; font-weight: bold; }
@@ -264,13 +264,13 @@ body { animation: crt-flicker 9s infinite; }
 .start-subtitle { font-family: var(--font-vt); font-size: 1.5rem; color: var(--amber); letter-spacing: 6px; margin-bottom: 12px; text-align: center; }
 .start-desc { font-size: 1rem; color: var(--txt); text-align: center; max-width: 600px; line-height: 1.9; margin-bottom: 34px; font-weight: bold; background: rgba(0,0,0,.6); padding: 10px; border-radius: 4px; }
 .start-select-lbl { font-family: var(--font-game); font-size: 1rem; color: var(--amber); letter-spacing: 4px; margin-bottom: 18px; text-align: center; text-shadow: 0 0 10px rgba(255,180,0,.4); }
-#ideology-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; max-width: 1100px; margin-bottom: 28px; }
-.ideology-card { background: rgba(12,13,26,.8); backdrop-filter: blur(4px); border: 2px solid var(--border-hi); border-bottom: 5px solid var(--border-hi); border-radius: 4px; padding: 22px 16px; text-align: center; cursor: pointer; transition: all .2s; }
-.ideology-card:hover, .ideology-card.selected { border-color: var(--accent-color, var(--green)); border-bottom-color: var(--accent-color, var(--green)); background: var(--glow-bg, rgba(57,255,20,.15)); transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,.5); }
-.ideology-card .icon { font-size: 3.5rem; margin-bottom: 12px; text-shadow: 0 5px 10px rgba(0,0,0,.5); }
-.ideology-card .name { font-family: var(--font-game); font-size: 1.2rem; margin-bottom: 8px; letter-spacing: 1px; color: #fff; text-shadow: 0 0 8px currentColor; }
-.ideology-card .desc { font-size: .8rem; color: var(--txt-dim); line-height: 1.6; font-weight: bold; }
-#ideology-desc-preview { font-size: .95rem; color: var(--txt-dim); min-height: 24px; margin-bottom: 22px; text-align: center; font-weight: bold; background: rgba(0,0,0,.5); padding: 4px 12px; border-radius: 4px; }
+#axiom-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 14px; max-width: 1100px; margin-bottom: 28px; }
+.axiom-card { background: rgba(12,13,26,.8); backdrop-filter: blur(4px); border: 2px solid var(--border-hi); border-bottom: 5px solid var(--border-hi); border-radius: 4px; padding: 22px 16px; text-align: center; cursor: pointer; transition: all .2s; }
+.axiom-card:hover, .axiom-card.selected { border-color: var(--accent-color, var(--green)); border-bottom-color: var(--accent-color, var(--green)); background: var(--glow-bg, rgba(57,255,20,.15)); transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,.5); }
+.axiom-card .icon { font-size: 3.5rem; margin-bottom: 12px; text-shadow: 0 5px 10px rgba(0,0,0,.5); }
+.axiom-card .name { font-family: var(--font-game); font-size: 1.2rem; margin-bottom: 8px; letter-spacing: 1px; color: #fff; text-shadow: 0 0 8px currentColor; }
+.axiom-card .desc { font-size: .8rem; color: var(--txt-dim); line-height: 1.6; font-weight: bold; }
+#axiom-desc-preview { font-size: .95rem; color: var(--txt-dim); min-height: 24px; margin-bottom: 22px; text-align: center; font-weight: bold; background: rgba(0,0,0,.5); padding: 4px 12px; border-radius: 4px; }
 .btn-primary { background: rgba(57,255,20,.15); border: 2px solid var(--green); border-bottom: 5px solid var(--green); color: var(--green); font-family: var(--font-game); font-size: 2rem; padding: 16px 60px; letter-spacing: 4px; border-radius: 4px; transition: all .2s; text-shadow: var(--green-glow); backdrop-filter: blur(4px); }
 .btn-primary:hover { background: rgba(57,255,20,.3); box-shadow: 0 0 30px rgba(57,255,20,.4); transform: translateY(-3px); }
 .btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; border-bottom-width: 2px; background: rgba(0,0,0,.5); }

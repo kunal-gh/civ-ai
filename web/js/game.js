@@ -1,5 +1,5 @@
 // ============================================================
-// game.js — CIV-AI v4  Retro Terminal Edition
+// game.js — AXIOM v4  Retro Terminal Edition
 // UX: Policy buttons → advance year immediately
 //     Events render as typewriter "news flashes"
 //     All complex data lives in tabs (Data / Research / World)
@@ -8,7 +8,7 @@
 // ---- Global State ----
 let G = {
   state: null,
-  selectedIdeology: null,
+  selectedAxiom: null,
   history: [],
   usedDilemmas: new Set(), usedCrises: new Set(), triggeredDiscoveries: new Set(),
   chart: null, mlCache: null,
@@ -42,21 +42,21 @@ function initTabNav() {
 // START SCREEN
 // ==================================================
 function renderStartScreen() {
-  const grid = document.getElementById('ideology-grid');
+  const grid = document.getElementById('axiom-grid');
   grid.innerHTML = '';
-  for (const [key, ideo] of Object.entries(IDEOLOGIES)) {
+  for (const [key, ideo] of Object.entries(AXIOMS)) {
     const card = document.createElement('div');
-    card.className = 'ideology-card';
+    card.className = 'axiom-card';
     card.style.setProperty('--accent-color', ideo.color);
     card.style.setProperty('--glow-bg', ideo.color + '11');
     card.innerHTML = `<div class="icon">${ideo.icon}</div>
       <div class="name" style="color:${ideo.color}">${ideo.name}</div>
       <div class="desc">${ideo.desc}</div>`;
     card.addEventListener('click', () => {
-      document.querySelectorAll('.ideology-card').forEach(c => c.classList.remove('selected'));
+      document.querySelectorAll('.axiom-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
-      G.selectedIdeology = key;
-      document.getElementById('ideology-desc-preview').innerHTML =
+      G.selectedAxiom = key;
+      document.getElementById('axiom-desc-preview').innerHTML =
         `<span style="color:${ideo.color}">${ideo.icon} ${ideo.name}:</span> ${ideo.desc}`;
       document.getElementById('start-btn').disabled = false;
     });
@@ -65,7 +65,7 @@ function renderStartScreen() {
 }
 
 async function startGame() {
-  if (!G.selectedIdeology) return;
+  if (!G.selectedAxiom) return;
   
   const startBtn = document.getElementById('start-btn');
   if (startBtn) {
@@ -75,7 +75,7 @@ async function startGame() {
 
   const doStart = async () => {
     let state = new WorldState();
-    state = applyIdeology(state, G.selectedIdeology);
+    state = applyAxiom(state, G.selectedAxiom);
     G.state = state;
     G.director = new AIDirector();
     G.emotionTracker = new EmotionInference();
@@ -89,13 +89,13 @@ async function startGame() {
 
     renderAll();
     initChart();
-    addTimeline(1, `Civilization founded under ${IDEOLOGIES[G.selectedIdeology].name}.`);
+    addTimeline(1, `Civilization founded under ${AXIOMS[G.selectedAxiom].name}.`);
 
     // Welcome news flash (no typewriter delay)
     setNewsFlash(
       '>> SYSTEM INITIALIZED',
       null,
-      `${IDEOLOGIES[G.selectedIdeology].icon} ${IDEOLOGIES[G.selectedIdeology].name.toUpperCase()} PROTOCOL ACTIVE\n\nWelcome, Administrator. Your civilization is online.\nYear 1 begins now. Select a directive to advance time.\n\nRemember: Every choice has cascading consequences.\nThe AI Director watches. The world adapts.`,
+      `${AXIOMS[G.selectedAxiom].icon} ${AXIOMS[G.selectedAxiom].name.toUpperCase()} PROTOCOL ACTIVE\n\nWelcome, Administrator. Your civilization is online.\nYear 1 begins now. Select a directive to advance time.\n\nRemember: Every choice has cascading consequences.\nThe AI Director watches. The world adapts.`,
       []
     );
   };
@@ -113,11 +113,11 @@ async function startGame() {
 function renderAll() {
   if (!G.state) return;
   const s = G.state;
-  const ideo = IDEOLOGIES[s.ideology];
+  const ideo = AXIOMS[s.axiom];
 
   // Header
   document.getElementById('hdr-year').textContent = `YEAR ${s.year}`;
-  const hdrIdeo = document.getElementById('hdr-ideology');
+  const hdrIdeo = document.getElementById('hdr-axiom');
   hdrIdeo.style.display = 'inline-block';
   hdrIdeo.textContent = `${ideo.icon} ${ideo.name}`;
   hdrIdeo.style.color = ideo.color; hdrIdeo.style.borderColor = ideo.color;
@@ -793,7 +793,7 @@ function showEnding(ending) {
     <div class="ending-grade" style="color:${ending.accent}">${ending.grade}</div>
     <div class="ending-title" style="color:${ending.accent}">${ending.title}</div>
     <div class="ending-subtitle">${ending.subtitle}</div>
-    <div class="ending-year">YEAR ${G.state.year} — ${IDEOLOGIES[G.state.ideology]?.name || ''}</div>
+    <div class="ending-year">YEAR ${G.state.year} — ${AXIOMS[G.state.axiom]?.name || ''}</div>
     <div class="ending-desc">${ending.desc}</div>
     <div class="ending-stats" style="color:${ending.accent}">
       SCORE: ${calcScore(G.state)}/100 · STRATEGY: ${STRATEGY_TYPES[G.playerStrategy]?.label || 'Balanced'}<br>

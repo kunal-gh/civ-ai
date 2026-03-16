@@ -1,4 +1,4 @@
 ﻿"""
-CIV-AI UI package.
+AXIOM UI package.
 Contains the Streamlit dashboard application.
 """

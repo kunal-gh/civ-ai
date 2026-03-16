@@ -1,14 +1,14 @@
-# CIV-AI: Research & Engineering Project Report
+# AXIOM: Research & Engineering Project Report
 
 ## Abstract
 
-This report describes the design, architecture, and engineering implementation of CIV-AI — a machine learning–driven civilization simulator built as a research-grade portfolio system. The platform combines a deterministic socio-economic simulation engine, a supervised Random Forest population predictor, a Gemini 2.0 Flash generative event system, explainable AI feature importance analysis, and an interactive Streamlit visualization dashboard. The system runs entirely on commodity laptop hardware and demonstrates a complete applied AI engineering pipeline from data generation through model deployment.
+This report describes the design, architecture, and engineering implementation of AXIOM — a machine learning–driven civilization simulator built as a research-grade portfolio system. The platform combines a deterministic socio-economic simulation engine, a supervised Random Forest population predictor, a Gemini 2.0 Flash generative event system, explainable AI feature importance analysis, and an interactive Streamlit visualization dashboard. The system runs entirely on commodity laptop hardware and demonstrates a complete applied AI engineering pipeline from data generation through model deployment.
 
 ---
 
 ## 1. Introduction
 
-Modern AI engineering requires the orchestration of multiple system components: simulation environments, data pipelines, predictive models, generative AI, explainability layers, and user interfaces. Most academic ML projects isolate one of these concerns. CIV-AI integrates all of them into a single cohesive platform organized around a civilization simulation loop.
+Modern AI engineering requires the orchestration of multiple system components: simulation environments, data pipelines, predictive models, generative AI, explainability layers, and user interfaces. Most academic ML projects isolate one of these concerns. AXIOM integrates all of them into a single cohesive platform organized around a civilization simulation loop.
 
 The system is designed to answer a specific research question: *can a Random Forest regressor, trained on synthetic simulation data, produce sufficiently accurate population forecasts to meaningfully inform decision-making within an interactive simulation?*
 
@@ -110,4 +110,4 @@ A local heuristic fallback engine activates automatically when the API is unavai
 
 ## 8. Conclusion
 
-CIV-AI demonstrates that a complete, research-grade AI engineering pipeline can be implemented on commodity hardware within a bounded scope. The integration of supervised ML, generative AI, and explainability within a single interactive loop produces a system that is simultaneously a playable simulation and a working demonstration of applied ML engineering principles.
+AXIOM demonstrates that a complete, research-grade AI engineering pipeline can be implemented on commodity hardware within a bounded scope. The integration of supervised ML, generative AI, and explainability within a single interactive loop produces a system that is simultaneously a playable simulation and a working demonstration of applied ML engineering principles.

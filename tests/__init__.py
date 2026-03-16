@@ -1,3 +1,3 @@
 ﻿"""
-CIV-AI test suite.
+AXIOM test suite.
 """
