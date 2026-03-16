@@ -649,17 +649,18 @@ function renderTechTree(s) {
     const level = s.techProgress[pathKey] ?? 0;
     const div = document.createElement('div');
     div.className = 'tech-path';
-    div.innerHTML = `<div class="tech-path-name" style="color:${path.color}">${path.icon} ${path.name}</div>`;
+    div.innerHTML = `<div class="tech-path-name" style="color:var(--txt-dim)">${path.icon} ${path.name}</div>`;
     const levelsEl = document.createElement('div');
     levelsEl.className = 'tech-levels';
     path.levels.forEach((lvl, idx) => {
       const el = document.createElement('div');
       const done = idx < level; const avail = idx === level;
       el.className = `tech-level ${done?'researched':avail?'unlocked':'locked'}`;
-      el.style.color = path.color;
+      el.style.color = avail ? 'var(--green)' : 'var(--txt-dim)';
       el.title = `${lvl.name} — ${lvl.desc} (Cost: ${lvl.cost} Economy)`;
       el.textContent = lvl.name.split(' ').slice(0,2).join(' ');
       if (avail && s.economy >= lvl.cost) {
+        el.style.borderColor = 'var(--border-hi)';
         el.addEventListener('click', () => showTechModal(pathKey, idx, path, lvl, s));
       }
       levelsEl.appendChild(el);
