@@ -19,20 +19,22 @@ This guarantees a **100% stable framerate** and **zero-latency UI rendering** wh
 ```mermaid
 flowchart TD
     %% Frontend Edge
-    subgraph Client [Client Edge (Browser)]
-        A["👤 Player\nPolicy Decision"] 
+    subgraph Client ["Client Edge (Browser)"]
+        direction TB
+        A(["👤 Player\nPolicy Decision"]) 
         B["⚙️ Deterministic Physics Engine\n(engine.js)"]
-        C["🌍 17-Dimensional\nContinuous World State"]
-        UI["🖥️ Three.js/Canvas\nRender Pipeline"]
+        C[/"🌍 17-Dimensional\nContinuous World State"\]
+        UI{{"🖥️ Three.js/Canvas\nRender Pipeline"}}
     end
 
     %% Vercel Serverless Cluster
-    subgraph Serverless [Vercel Serverless API]
+    subgraph Serverless ["Vercel Serverless API"]
+        direction TB
         D["🤖 Python Microservice\npredict.py"]
-        E["🧠 scikit-learn\nRandom Forest Regressor"]
+        E[("\n🧠 scikit-learn\nRandom Forest Model\n")]
         
         F["📡 Node.js Microservice\nevent.js"]
-        G["✨ Google Gemini 2.0 Flash\nLLM Inferencing"]
+        G[("\n✨ Google Gemini\n2.0 Flash LLM\n")]
     end
 
     %% Data Flow
