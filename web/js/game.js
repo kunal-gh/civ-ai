@@ -339,10 +339,27 @@ async function advanceYear(policyKey) {
     addTimeline(s.year, civEvent.event.slice(0, 80));
   }
 
-  // Generate local event (AI Director biased)
-  const ev = generateLocalEvent(G.state);
+  // Attempt to generate event via Gemini API (Serverless), fallback to local AI Director biased event
+  let ev;
+  try {
+    const API_URL = window.CIV_API_URL || 'http://localhost:8000';
+    const res = await fetch(`${API_URL}/api/event`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ state: G.state }),
+      signal: AbortSignal.timeout(4000)
+    });
+    if (!res.ok) throw new Error('API failed');
+    ev = await res.json();
+    if (!ev.event || !ev.severity) throw new Error('Malformed AI response');
+  } catch (err) {
+    console.warn("Gemini API fallback to local heuristics:", err);
+    ev = generateLocalEvent(G.state);
+  }
+
   const finalEv = G.director?.eventBias() === 'HIGH' && ev.severity === 'MODERATE'
     ? { ...ev, severity: 'HIGH' } : ev;
+  
   const preApplyState = JSON.parse(JSON.stringify(G.state));
   G.state = applyEvent(G.state, finalEv.effects || {});
 
@@ -531,16 +548,27 @@ function renderMetrics(s) {
 async function fetchMLPredictions(s) {
   const mlPanel = document.getElementById('ml-panel');
   try {
-    const API_URL = window.CIV_API_URL || 'http://localhost:8000';
-    const res = await fetch(`${API_URL}/ml/predict`, {
+    const API_URL = window.CIV_API_URL || '';
+    const res = await fetch(`${API_URL}/api/predict`, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ state:{ population:s.population, food:s.food, energy:s.energy, technology:s.technology, pollution:s.pollution, economy:s.economy, happiness:s.happiness, legitimacy:s.legitimacy, disease_rate:s.disease_rate, military:s.military, climate:s.climate } }),
+      body: JSON.stringify({ state:{ population:s.population, food:s.food, energy:s.energy, technology:s.technology, pollution:s.pollution, economy:s.economy, happiness:s.happiness, legitimacy:s.legitimacy, disease_rate:s.disease_rate, military:s.military, climate:s.climate, water:s.water, minerals:s.minerals, trust:s.trust, fear:s.fear, anger:s.anger, hope:s.hope } }),
       signal: AbortSignal.timeout(2500)
     });
+    if (!res.ok) throw new Error('ML Predict API failed');
     const data = await res.json();
-    G.mlCache = { ...data, advisor: pickAdvisorTip(s), anomaly: s.disease_rate > 60 && s.climate > 50 };
+    G.mlCache = { 
+      predictions: {
+        'Δ Pop': data.predicted_delta,
+        ...data.feature_importances
+      },
+      confidence: data.confidence, 
+      advisor: pickAdvisorTip(s), 
+      anomaly: s.disease_rate > 60 && s.climate > 50 
+    };
     renderMLPanel(mlPanel, G.mlCache); return;
-  } catch (_) {}
+  } catch (err) {
+    console.warn("ML API fallback to local approximation:", err);
+  }
   // Fallback
   const next = simulationStep(JSON.parse(JSON.stringify(s)), 'agriculture');
   G.mlCache = {

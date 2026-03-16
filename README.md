@@ -110,7 +110,9 @@ This creates a dual survival challenge: manage your resources *and* maintain soc
 | Layer | Technology | Purpose |
 |---|---|---|
 | Core Logic | Vanilla ES6 JavaScript | Zero-dependency, ultra-fast deterministic state loop (`engine.js`) |
-| Event Generation | JavaScript Heuristics | Real-time dynamic narrative generation based on active variables |
+| Event Generation | Node.js Serverless (`api/event.js`) | Reaches out to Gemini 2.0 Flash via `@google/generative-ai` to dynamically formulate JSON events based on current game state. |
+| Machine Learning | Python Serverless (`api/predict.py`) | Hosts a `scikit-learn` Random Forest Regressor trained on 5000+ synthetic simulations to predict the 5-year population trajectory and deduce feature importances. |
+| Backend Hosting | Vercel Serverless API | Securely holds Environment Variables and isolated language runtimes (Python + JS) invoked purely by frontend fetches. |
 | UI Framework | Vanilla HTML5 / CSS3 | Bespoke CRT retro-gaming aesthetic without heavy framework bloat |
 | 3D Rendering | Three.js | Starfield particle systems and orbital camera zoom transitions (`galaxy.js`) |
 | Data Visualization | Chart.js 4.4 | Real-time canvas rendering of 5-variable historical trajectory |
